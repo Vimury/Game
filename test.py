@@ -1,6 +1,1 @@
-from random import randint
-
-sp = []
-sp.append([randint(0, 2) for j in range(5)])
-sp.append([randint(0, 2) for j in range(5)])
-print(sp)
+"""Файл только для того чтобы не выходя из проекта тестить что-то(потом удалим)"""

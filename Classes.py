@@ -49,6 +49,7 @@ class Map:
                 print(self.map[j][i].entity, end=' ')
             print()
 
+    # Функция генерации
     def generate(self):
         sp1 = []
         for i in range(2):

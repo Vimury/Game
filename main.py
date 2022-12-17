@@ -15,7 +15,7 @@ purple = 9
 tree = 1
 stone = 2
 gold = 3
-#
+# Не придумал сущность
 fish = 4
 
 farm = 5
@@ -25,7 +25,7 @@ big_tower = 8
 town = 9
 
 villager = 10
-#
+# Не придумал название
 knight = 12
 big_knight = 13
 

@@ -42,14 +42,16 @@ def render():  # Загрузка стартовой земли
         for y in range(y_size):
             for step in range(0, 42 * x_size, 63):
                 # Почему-то только воду делает и не могу понять почему
-                if (a := m.map[x][y].type) == ground:
+                a = m.map[x][y].type
+                if a == ground:
                     cell = load_image('ground.png', (237, 28, 36))
                 elif a == water:
                     cell = load_image('water.png', (237, 28, 36))
-                if y & 1 == 0:  # Быстрая проверка на чётность
-                    screen.blit(cell, (step, y * 15))
-                else:
-                    screen.blit(cell, (step + 31, y * 15))
+                if m.map[x][y].entity == tree:
+                    cell2 = load_image('tree.png', (255, 255, 255))
+                    screen.blit(cell2, (step + (31 if y & 1 == 0 else 0), y * 15))
+                # y & 1 == 0 - быстрая проверка на нечётность
+                screen.blit(cell, (step + (31 if y & 1 == 0 else 0), y * 15))
 
 
 def load_image(name, colorkey=None):
@@ -77,9 +79,9 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
     fps = 30
+    clock = pygame.time.Clock()
 
     screen.fill((0, 0, 0))
-    clock = pygame.time.Clock()
     running = True
     render()
     while running:

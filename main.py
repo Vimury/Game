@@ -44,11 +44,11 @@ def render():  # Загрузка стартовой земли
                 # Почему-то только воду делает и не могу понять почему
                 a = m.map[x][y].type
                 if a == ground:
-                    cell = load_image('ground.png', (237, 28, 36))
+                    cell = load_image('ground.png', colorkey=(237, 28, 36))
                 elif a == water:
-                    cell = load_image('water.png', (237, 28, 36))
+                    cell = load_image('water.png', colorkey=(237, 28, 36))
                 if m.map[x][y].entity == tree:
-                    cell2 = load_image('tree.png', (255, 255, 255))
+                    cell2 = load_image('tree.png', colorkey=(255, 255, 255))
                     screen.blit(cell2, (step + (31 if y & 1 == 0 else 0), y * 15))
                 # y & 1 == 0 - быстрая проверка на нечётность
                 screen.blit(cell, (step + (31 if y & 1 == 0 else 0), y * 15))

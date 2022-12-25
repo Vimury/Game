@@ -3,16 +3,19 @@ import pygame
 import os
 import sys
 
+'''Прописал id типа местности'''
+water = 0
+ground = 1
 '''Прописал id государств'''
-red = 1
-pink = 2
-green = 3
-light_green = 4
-blue = 5
-light_blue = 6
-orange = 7
-yellow = 8
-purple = 9
+red = 2
+pink = 3
+green = 4
+light_green = 5
+blue = 6
+light_blue = 7
+orange = 8
+yellow = 9
+purple = 10
 
 '''Прописал id сущностей'''
 tree = 1
@@ -31,10 +34,6 @@ villager = 10
 # Не придумал название
 knight = 12
 big_knight = 13
-
-'''Прописал id типа местности'''
-water = 0
-ground = 1
 
 
 def render():  # Загрузка стартовой земли
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Countries of century knights')
     size = width, height = 1000, 750
-    #screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     screen = pygame.display.set_mode((width, height))
 
     fps = 30

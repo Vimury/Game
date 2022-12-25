@@ -1,13 +1,16 @@
+'''Прописал id типа местности'''
+water = 0
+ground = 1
 '''Прописал id государств'''
-red = 1
-pink = 2
-green = 3
-light_green = 4
-blue = 5
-light_blue = 6
-orange = 7
-yellow = 8
-purple = 9
+red = 2
+pink = 3
+green = 4
+light_green = 5
+blue = 6
+light_blue = 7
+orange = 8
+yellow = 9
+purple = 10
 
 '''Прописал id сущностей'''
 tree = 1
@@ -26,10 +29,6 @@ villager = 10
 # Не придумал название
 knight = 12
 big_knight = 13
-
-'''Прописал id типа местности'''
-water = 0
-ground = 1
 
 from random import randint, choices
 
@@ -89,43 +88,57 @@ class Map:
         for i in range(self.y):
             for j in range(self.x):
                 if self.map[i][j].type == ground:
-                    if not self.check_neighbours(ground, i, j):
+                    if not self.check_neighbours(ground, i, j)[0]:
                         self.map[i][j].type = water
                         self.map[i][j].entity = None
 
+
     def check_neighbours(self, type, i, j):
         neighbours = 0
+        pos = []
         if i & 1:
             if self.map[i + 1][j].type == type:
                 neighbours += 1
+                pos.append((i + 1, j))
             if self.map[i - 1][j].type == type:
                 neighbours += 1
+                pos.append((i - 1, j))
             if self.map[i - 1][j + 1].type == type:
                 neighbours += 1
+                pos.append((i - 1, j + 1))
             if self.map[i + 1][j + 1].type == type:
                 neighbours += 1
+                pos.append((i + 1, j + 1))
             if self.map[i][j + 1].type == type:
                 neighbours += 1
+                pos.append((i, j + 1))
             if self.map[i][j - 1].type == type:
                 neighbours += 1
+                pos.append((i, j - 1))
         else:
             if self.map[i + 1][j].type == type:
                 neighbours += 1
+                pos.append((i + 1, j))
             if self.map[i - 1][j].type == type:
                 neighbours += 1
+                pos.append((i - 1, j))
             if self.map[i + 1][j - 1].type == type:
                 neighbours += 1
+                pos.append((i + 1, j - 1))
             if self.map[i - 1][j - 1].type == type:
                 neighbours += 1
+                pos.append((i - 1, j - 1))
             if self.map[i][j + 1].type == type:
                 neighbours += 1
+                pos.append((i, j + 1))
             if self.map[i][j - 1].type == type:
                 neighbours += 1
-        return neighbours
+                pos.append((i, j - 1))
+        return (neighbours, pos)
 
 
 class Cell:
     def __init__(self, type, entity):
-        self.type = type
+        self.type = type  # Тип местности на клетке или государсто на ней
         self.entity = entity
-        self.goverment = None
+        self.how_far = 0

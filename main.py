@@ -42,15 +42,19 @@ def render():  # Загрузка стартовой земли
     for y in range(y_size):
         for x in range(x_size):
             a = m.map[y][x].type
+            f = False
             if a == ground:
                 cell = load_image('ground.png', colorkey=(237, 28, 36))
+                if m.map[y][x].entity == tree:
+                    f = True
+                    cell2 = load_image('tree.png', colorkey=(255, 255, 255))
+
             elif a == water:
                 cell = load_image('water.png', colorkey=(237, 28, 36))
-            if m.map[y][x].entity == tree:
-                cell2 = load_image('tree.png', colorkey=(255, 255, 255))
-                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
             # y & 1 == 0 - быстрая проверка на чётность
             screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))
+            if f:
+                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
         step_x += 31
 
 

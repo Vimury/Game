@@ -91,6 +91,7 @@ class Map:
                 if self.map[i][j].type == ground:
                     if not self.check_neighbours(ground, i, j):
                         self.map[i][j].type = water
+                        self.map[i][j].entity = None
 
     def check_neighbours(self, type, i, j):
         neighbours = 0

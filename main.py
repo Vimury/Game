@@ -38,20 +38,20 @@ ground = 1
 
 
 def render():  # Загрузка стартовой земли
-    for x in range(x_size):
-        for y in range(y_size):
-            for step in range(0, 42 * x_size, 63):
-                # Почему-то только воду делает и не могу понять почему
-                a = m.map[x][y].type
-                if a == ground:
-                    cell = load_image('ground.png', colorkey=(237, 28, 36))
-                elif a == water:
-                    cell = load_image('water.png', colorkey=(237, 28, 36))
-                if m.map[x][y].entity == tree:
-                    cell2 = load_image('tree.png', colorkey=(255, 255, 255))
-                    screen.blit(cell2, (step + (31 if y & 1 == 0 else 0), y * 15))
-                # y & 1 == 0 - быстрая проверка на нечётность
-                screen.blit(cell, (step + (31 if y & 1 == 0 else 0), y * 15))
+    step_x = 0
+    for y in range(y_size):
+        for x in range(x_size):
+            a = m.map[y][x].type
+            if a == ground:
+                cell = load_image('ground.png', colorkey=(237, 28, 36))
+            elif a == water:
+                cell = load_image('water.png', colorkey=(237, 28, 36))
+            if m.map[y][x].entity == tree:
+                cell2 = load_image('tree.png', colorkey=(255, 255, 255))
+                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
+            # y & 1 == 0 - быстрая проверка на чётность
+            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))
+        step_x += 31
 
 
 def load_image(name, colorkey=None):
@@ -71,12 +71,13 @@ def load_image(name, colorkey=None):
 
 
 if __name__ == '__main__':
-    x_size, y_size = 20, 20
+    x_size, y_size = 20, 30
     m = Map(x_size, y_size)
     pygame.init()
     pygame.display.set_caption('Countries of century knights')
     size = width, height = 1000, 750
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    #screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((width, height))
 
     fps = 30
     clock = pygame.time.Clock()

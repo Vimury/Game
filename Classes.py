@@ -38,19 +38,21 @@ class Map:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.map = self.generate()
+        self.map = self.pre_generate()
+        self.after_generate()
+
         for i in range(x):
             for j in range(y):
                 print(self.map[j][i].type, end=' ')
             print()
         print()
-        for i in range(x):
-            for j in range(y):
-                print(self.map[j][i].entity, end=' ')
-            print()
+        # for i in range(x):
+        #     for j in range(y):
+        #         print(self.map[j][i].entity, end=' ')
+        #     print()
 
     # Функция генерации
-    def generate(self):
+    def pre_generate(self):
         sp1 = []
         for i in range(2):
             sp1.append([randint(0, 2) for j in range(2)])
@@ -76,21 +78,49 @@ class Map:
                     row.append(
                         Cell(choices([ground, water], weights=[8, 9 - sp1[2 * i // self.y][2 * j // self.x] -
                                                                sp2[5 * i // self.y][j * 5 // self.x] -
-                                                               sp3[i * 10 // self.y][j * 10 // self.x] - sp4[i][
-                                                                   j * 5 // self.x]])[0],
+                                                               sp3[i * 10 // self.y][j * 10 // self.x] - sp4[i][j]])[0],
                              choices([tree, stone, gold, None], weights=[6, 3, 1, 12])[0]))
             res.append(row)
         for i in range(3):
             res.append([Cell(water, None) for j in range(self.x)])
-        for i in range(self.x):
-            for j in range(self.y):
-                if res[i][j].type == ground:
-                    if res[i + 1][j].type != ground and res[i - 1][j].type != ground and \
-                            res[i + 1][j + 1].type != ground and \
-                            res[i + 1][j - 1].type != ground and res[i - 1][j + 1].type != ground and \
-                            res[i - 1][j - 1].type != ground:
-                        res[i][j].type = water
         return res
+
+    def after_generate(self):
+        for i in range(self.y):
+            for j in range(self.x):
+                if self.map[i][j].type == ground:
+                    if not self.check_neighbours(ground, i, j):
+                        self.map[i][j].type = water
+
+    def check_neighbours(self, type, i, j):
+        neighbours = 0
+        if i & 1:
+            if self.map[i + 1][j].type == type:
+                neighbours += 1
+            if self.map[i - 1][j].type == type:
+                neighbours += 1
+            if self.map[i - 1][j + 1].type == type:
+                neighbours += 1
+            if self.map[i + 1][j + 1].type == type:
+                neighbours += 1
+            if self.map[i][j + 1].type == type:
+                neighbours += 1
+            if self.map[i][j - 1].type == type:
+                neighbours += 1
+        else:
+            if self.map[i + 1][j].type == type:
+                neighbours += 1
+            if self.map[i - 1][j].type == type:
+                neighbours += 1
+            if self.map[i + 1][j - 1].type == type:
+                neighbours += 1
+            if self.map[i - 1][j - 1].type == type:
+                neighbours += 1
+            if self.map[i][j + 1].type == type:
+                neighbours += 1
+            if self.map[i][j - 1].type == type:
+                neighbours += 1
+        return neighbours
 
 
 class Cell:

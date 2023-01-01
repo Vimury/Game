@@ -6,16 +6,17 @@ import sys
 '''Прописал id типа местности'''
 water = 0
 ground = 1
+
 '''Прописал id государств'''
-red = 2
-pink = 3
-green = 4
-light_green = 5
-blue = 6
-light_blue = 7
-orange = 8
-yellow = 9
-purple = 10
+red = 1
+pink = 2
+green = 3
+light_green = 4
+blue = 5
+light_blue = 6
+orange = 7
+yellow = 8
+purple = 9
 
 '''Прописал id сущностей'''
 tree = 1
@@ -43,7 +44,7 @@ def render():  # Загрузка стартовой земли
             a = m.map[y][x].type
             f = False
             if a == ground:
-                cell = load_image('ground.png', colorkey=(237, 28, 36))
+                cell = load_image('ground.png', colorkey=(255, 255, 255))
                 b = m.map[y][x].entity
                 if b == tree:
                     f = True
@@ -52,7 +53,7 @@ def render():  # Загрузка стартовой земли
                     f = True
                     cell2 = load_image('gold.png', colorkey=(255, 255, 255))
             elif a == water:
-                cell = load_image('water.png', colorkey=(237, 28, 36))
+                cell = load_image('water.png', colorkey=(255, 255, 255))
             # y & 1 == 0 - быстрая проверка на чётность
             screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))
             if f:
@@ -88,8 +89,8 @@ if __name__ == '__main__':
     fps = 30
     clock = pygame.time.Clock()
 
-    # screen.fill((63, 72, 204))
-    screen.fill((0, 0, 0))
+    screen.fill((0, 0, 128))
+    # screen.fill((0, 0, 0))
     running = True
     render()
     while running:

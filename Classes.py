@@ -1,16 +1,10 @@
 '''Прописал id типа местности'''
 water = 0
 ground = 1
+
 '''Прописал id государств'''
-red = 2
-pink = 3
-green = 4
-light_green = 5
-blue = 6
-light_blue = 7
-orange = 8
-yellow = 9
-purple = 10
+sp = [(red := 1), (pink := 2), (green := 3), (light_green := 4), (blue := 5), (light_blue := 6), (orange := 7),
+      (yellow := 8), (purple := 9)]
 
 '''Прописал id сущностей'''
 tree = 1
@@ -37,8 +31,13 @@ class Map:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.gr = 0
         self.map = self.pre_generate()
         self.after_generate()
+        while self.gr > (self.x - 6) * (self.y - 6) * 3 // 4:
+            self.gr = 0
+            self.map = self.pre_generate()
+            self.after_generate()
 
         for i in range(x):
             for j in range(y):
@@ -50,10 +49,6 @@ class Map:
         #         print(self.map[j][i].entity, end=' ')
         #     print()
         sp = []
-        for i in range(self.y):
-            for j in range(self.x):
-                if self.map[i][j].type == ground:
-                    self.map[i][j].parent = self.get(i, j)
         for i in range(x):
             for j in range(y):
                 if self.map[j][i].type == ground:
@@ -98,7 +93,8 @@ class Map:
                         row.append(
                             Cell(choices([ground, water], weights=[8, 8 - sp1[2 * i // self.y][2 * j // self.x] -
                                                                    sp2[5 * i // self.y][j * 5 // self.x] -
-                                                                   sp3[i * 10 // self.y][j * 10 // self.x] - sp4[i][j]])[0],
+                                                                   sp3[i * 10 // self.y][j * 10 // self.x] - sp4[i][
+                                                                       j]])[0],
                                  None, (i, j)))
                     if row[-1].type == ground:
                         row[-1].entity = choices([tree, stone, gold, None], weights=[6, 3, 0, 12])[0]
@@ -107,7 +103,7 @@ class Map:
             res.append([Cell(water, None, (-1, -1)) for j in range(self.x)])
         return res
 
-    def unite_islands(self, first, i, j):
+    def unite_islands(self, first: tuple, i: int, j: int) -> None:
         delta_x = abs(first[0] - self.map[i][j].parent[0])
         delta_y = abs(first[1] - self.map[i][j].parent[1])
         temp = self.check_neighbours(water, i, j)
@@ -115,7 +111,7 @@ class Map:
             if 2 < k[0] < self.y - 3:
                 if 2 < k[1] < self.x - 3:
                     if randint(0, 2) > 0:
-                        self.map[k[0]][k[1]] = Cell(ground, None, self.map[i][j].parent)
+                        self.map[k[0]][k[1]] = Cell(ground, gold, self.map[i][j].parent)
                     # if delta_y > abs(first[0] - self.map[k[0]][k[1]].parent[0]):
                     #     if delta_x < abs(first[1] - self.map[k[0]][k[1]].parent[1]):
                     #         self.map[k[0]][k[1]] = Cell(ground, None, self.map[i][j].parent)
@@ -136,7 +132,7 @@ class Map:
                 else:
                     self.unite_islands(first, k[0], k[1])
 
-    def after_generate(self):
+    def after_generate(self) -> None:
         for i in range(self.y):
             for j in range(self.x):
                 if self.map[i][j].type == ground:
@@ -150,49 +146,31 @@ class Map:
                             self.unite(i, j, k[0], k[1])
                 else:
                     self.map[i][j].parent = (-1, -1)
-        first = ()
         for i in range(self.y):
             for j in range(self.x):
                 if self.map[i][j].type == ground:
-                    if first:
-                        if self.map[i][j].parent != first:
-                            self.unite_islands(first, i, j)
-                            for k in range(self.y):
-                                for l in range(self.x):
-                                    self.map[i][j].checked = 0
-                    else:
-                        first = self.map[i][j].parent
+                    self.map[i][j].parent = self.get(i, j)
+        sp = []
+        for i in range(self.y):
+            for j in range(self.x):
+                if self.map[i][j].type == ground:
+                    if self.map[i][j].parent not in sp:
+                        sp.append(self.map[i][j].parent)
+        for o in range(1, len(sp)):
+            i = sp[o][0]
+            j = sp[o][1]
+            if self.map[i][j].type == ground:
+                self.unite_islands(sp[0], i, j)
+                for k in range(self.y):
+                    for l in range(self.x):
+                        self.map[i][j].checked = 0
+        for i in range(self.y):
+            for j in range(self.x):
+                if self.map[i][j].type == ground:
+                    self.gr += 1
 
-        # for i in range(self.y):
-        #     for j in range(self.x):
-        #         if self.map[i][j].type == ground:
-        #             self.map[i][j].parent = self.get(i, j)
-        #             if not first:
-        #                 first = self.map[i][j].parent
-        #             elif first != self.map[i][j].parent:
-        #                 delta_x = abs(first[0] - self.map[i][j].parent[0])
-        #                 delta_y = abs(first[1] - self.map[i][j].parent[1])
-        #                 for a in range(delta_x):
-        #                     for b in range(delta_y):
-        #                         self.map[first[0] + a][first[1] + b] = Cell(ground, gold, (i, j))
-        #                 self.unite(first[0], first[1], i, j)
-        #                 self.map[i][j].parent = self.get(i, j)
-        # for i in range(self.y):
-        #     for j in range(self.x):
-        #         if self.map[i][j].type == ground:
-        #             temp = self.check_neighbours(ground, i, j)
-        #             if not temp[0]:
-        #                 self.map[i][j].type = water
-        #                 self.map[i][j].entity = None
-        #                 self.map[i][j].parent = (-1, -1)
-        #             else:
-        #                 for k in temp[1]:
-        #                     self.unite(i, j, k[0], k[1])
-        # for i in range(self.y):
-        #     for j in range(self.x):
-        #         if self.map[i][j].type == ground:
-        #             self.map[i][j].parent = self.get(i, j)
-
+    def add_goverments(self):
+        pass
     def check_neighbours(self, type: int, i: int, j: int) -> (int, list):
         neighbours = 0
         pos = []
@@ -258,8 +236,10 @@ class Map:
 class Cell:
     def __init__(self, type: int, entity, pos_parent: tuple):
         self.type = type  # Тип местности на клетке
-        self.goverment = None
-        self.entity = entity
-        self.parent = pos_parent
-        self.checked = 0
-        self.rank = 1
+        self.goverment = None  # К какому цвету пренадлежит
+        self.capital = None  # Не парься
+        self.entity = entity  # Сущность на клетке
+        self.parent = pos_parent  # Снова не парься
+        self.checked = 0  # Это вообще не парься, там сложные слова как DFS
+        self.rank = 1  # Это вообще бесполезно(нет)
+        self.goverment_size = None  # Размеры государства

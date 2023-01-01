@@ -44,10 +44,13 @@ def render():  # Загрузка стартовой земли
             f = False
             if a == ground:
                 cell = load_image('ground.png', colorkey=(237, 28, 36))
-                if m.map[y][x].entity == tree:
+                b = m.map[y][x].entity
+                if b == tree:
                     f = True
                     cell2 = load_image('tree.png', colorkey=(255, 255, 255))
-
+                elif b == gold:
+                    f = True
+                    cell2 = load_image('gold.png', colorkey=(255, 255, 255))
             elif a == water:
                 cell = load_image('water.png', colorkey=(237, 28, 36))
             # y & 1 == 0 - быстрая проверка на чётность
@@ -85,6 +88,7 @@ if __name__ == '__main__':
     fps = 30
     clock = pygame.time.Clock()
 
+    # screen.fill((63, 72, 204))
     screen.fill((0, 0, 0))
     running = True
     render()

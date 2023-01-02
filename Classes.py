@@ -13,7 +13,7 @@ gold = 3
 # Не придумал сущность
 fish = 4
 
-main_tower = 5
+main_town = 5
 farm = 6
 big_farm = 7
 tower = 8

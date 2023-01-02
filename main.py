@@ -8,15 +8,8 @@ water = 0
 ground = 1
 
 '''Прописал id государств'''
-red = 1
-pink = 2
-green = 3
-light_green = 4
-blue = 5
-light_blue = 6
-orange = 7
-yellow = 8
-purple = 9
+sp = [(red := 1), (pink := 2), (green := 3), (light_green := 4), (blue := 5), (light_blue := 6), (orange := 7),
+      (yellow := 8), (purple := 9)]
 
 '''Прописал id сущностей'''
 tree = 1
@@ -38,13 +31,13 @@ big_knight = 13
 
 
 def render():  # Загрузка стартовой земли
-    step_x = 0
+    step_x = -15
     for y in range(y_size):
         for x in range(x_size):
             a = m.map[y][x].type
             f = False
             if a == ground:
-                cell = load_image('ground.png', colorkey=(255, 255, 255))
+                cell = load_image('ground2.png', colorkey=(255, 255, 255))
                 b = m.map[y][x].entity
                 if b == tree:
                     f = True
@@ -53,11 +46,11 @@ def render():  # Загрузка стартовой земли
                     f = True
                     cell2 = load_image('gold.png', colorkey=(255, 255, 255))
             elif a == water:
-                cell = load_image('water.png', colorkey=(255, 255, 255))
+                cell = load_image('water2.png', colorkey=(255, 255, 255))
             # y & 1 == 0 - быстрая проверка на чётность
-            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))
+            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0) - 24))
             if f:
-                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
+                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0) - 24))
         step_x += 31
 
 

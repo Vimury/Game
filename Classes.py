@@ -13,16 +13,17 @@ gold = 3
 # Не придумал сущность
 fish = 4
 
-farm = 5
-big_farm = 6
-tower = 7
-big_tower = 8
-town = 9
+main_tower = 5
+farm = 6
+big_farm = 7
+tower = 8
+big_tower = 9
+town = 10
 
-villager = 10
+villager = 11
 # Не придумал название
-knight = 12
-big_knight = 13
+knight = 13
+big_knight = 14
 
 from random import randint, choices
 

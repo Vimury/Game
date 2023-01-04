@@ -8,8 +8,10 @@ water = 0
 ground = 1
 
 '''Прописал id государств'''
-sp = [(red := 1), (pink := 2), (green := 3), (light_green := 4), (blue := 5), (light_blue := 6), (orange := 7),
-      (yellow := 8), (purple := 9)]
+colors = [(red := 1), (pink := 2), (green := 3), (light_green := 4), (blue := 5), (light_blue := 6), (orange := 7),
+          (yellow := 8), (purple := 9)]
+dict_colors = {1: 'red', 2: 'pink', 3: 'green', 4: 'light_green', 5: 'blue', 6: 'light_blue', 7: 'orange', 8: 'yellow',
+               9: 'purple'}
 
 '''Прописал id сущностей'''
 tree = 1
@@ -18,39 +20,44 @@ gold = 3
 # Не придумал сущность
 fish = 4
 
-farm = 5
-big_farm = 6
-tower = 7
-big_tower = 8
-town = 9
+castle = 5
+farm = 6
+big_farm = 7
+tower = 8
+big_tower = 9
+town = 10
 
-villager = 10
+villager = 11
 # Не придумал название
-knight = 12
-big_knight = 13
+knight = 13
+big_knight = 14
+
+dict_entity = {1: 'tree', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'farm', 7: 'big_farm', 8: 'tower',
+               9: 'big_tower', 10: 'town', 11: 'villager', 12: 'None', 13: 'knight', 14: 'big_knight'}
 
 
 def render():  # Загрузка стартовой земли
-    step_x = -15
+    # step_x = -15
+    step_x = 0
     for y in range(y_size):
         for x in range(x_size):
             a = m.map[y][x].type
             f = False
             if a == ground:
                 cell = load_image('ground2.png', colorkey=(255, 255, 255))
-                b = m.map[y][x].entity
-                if b == tree:
+                b = m.map[y][x].goverment
+                if b is not None:
+                    cell = load_image(f'{dict_colors[b]}.png', colorkey=(255, 255, 255))
+                c = m.map[y][x].entity
+                if c is not None:
                     f = True
-                    cell2 = load_image('tree.png', colorkey=(255, 255, 255))
-                elif b == gold:
-                    f = True
-                    cell2 = load_image('gold.png', colorkey=(255, 255, 255))
+                    cell2 = load_image(f'{dict_entity[c]}.png', colorkey=(255, 255, 255))
             elif a == water:
                 cell = load_image('water2.png', colorkey=(255, 255, 255))
             # y & 1 == 0 - быстрая проверка на чётность
-            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0) - 24))
+            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))  # -24
             if f:
-                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0) - 24))
+                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
         step_x += 31
 
 
@@ -90,6 +97,8 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                m.click_processing(m.get_coords(event.pos))
 
         clock.tick(fps)
         pygame.display.flip()

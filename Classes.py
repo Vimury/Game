@@ -1,3 +1,5 @@
+from math import sqrt
+
 '''Прописал id типа местности'''
 water = 0
 ground = 1
@@ -13,7 +15,7 @@ gold = 3
 # Не придумал сущность
 fish = 4
 
-main_town = 5
+castle = 5
 farm = 6
 big_farm = 7
 tower = 8
@@ -21,7 +23,7 @@ big_tower = 9
 town = 10
 
 villager = 11
-# Не придумал название
+man2 = 12
 knight = 13
 big_knight = 14
 
@@ -32,13 +34,29 @@ class Map:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.selected = False  # 3 вариации
+        # False - если ничего не выбрано, True - если выбрано государство, Tuple - если выбран персонаж
+        self.goverments_num = 4  # Количество государств
+        self.goverments_money = []
+        self.centres = []
+        step_x = 0
+        for i in range(self.y):
+            row = []
+            for j in range(self.x):
+                row.append((step_x, (j * 36 + (18 if i & 1 else 0))))
+            step_x += 31
+            self.centres.append(row)
+            print(row)
         self.gr = 0
         self.map = self.pre_generate()
         self.after_generate()
-        while self.gr > (self.x - 6) * (self.y - 6) * 3 // 4:
+        max_gr = (self.x - 4) * (self.y - 4) * 3 // 4  # Максимальное количество клеток земли на карте
+        min_gr = (self.x - 4) * (self.y - 4) // 4  # Минимальное количество клеток земли на карте
+        while self.gr > max_gr or self.gr < min_gr:
             self.gr = 0
             self.map = self.pre_generate()
             self.after_generate()
+        self.generate_goverments()
 
         for i in range(x):
             for j in range(y):
@@ -50,17 +68,16 @@ class Map:
         #         print(self.map[j][i].entity, end=' ')
         #     print()
         sp = []
-        for i in range(x):
-            for j in range(y):
-                if self.map[j][i].type == ground:
-                    if self.map[j][i].parent not in sp:
-                        sp.append(self.map[j][i].parent)
-                    print(self.map[j][i].parent, end=' ')
-                else:
-                    print((0, 0), end=' ')
-            print()
-        print()
-        print(len(sp))
+        # for i in range(x):
+        #     for j in range(y):
+        #         if self.map[j][i].type == ground:
+        #             if self.map[j][i].parent not in sp:
+        #                 sp.append(self.map[j][i].parent)
+        #             print(self.map[j][i].parent, end=' ')
+        #         else:
+        #             print((0, 0), end=' ')
+        #     print()
+        print(self.gr)
 
     # Функция генерации
     def pre_generate(self) -> list:
@@ -78,12 +95,12 @@ class Map:
         for i in range(self.y):
             sp4.append([randint(0, 2) for j in range(self.x)])
         res = []
-        for i in range(3):
+        for i in range(2):
             res.append([Cell(water, None, (-1, -1)) for j in range(self.x)])
-        for i in range(3, self.y - 3):
+        for i in range(2, self.y - 2):
             row = []
             for j in range(self.x):
-                if j < 3 or j > self.x - 3:
+                if j < 2 or j > self.x - 2:
                     row.append(Cell(water, None, (-1, -1)))
                 else:
                     if sp1[2 * i // self.y][2 * j // self.x] == 0:
@@ -98,9 +115,9 @@ class Map:
                                                                        j]])[0],
                                  None, (i, j)))
                     if row[-1].type == ground:
-                        row[-1].entity = choices([tree, stone, gold, None], weights=[6, 3, 0, 12])[0]
+                        row[-1].entity = choices([tree, stone, gold, None], weights=[6, 0, 0, 12])[0]
             res.append(row)
-        for i in range(3):
+        for i in range(2):
             res.append([Cell(water, None, (-1, -1)) for j in range(self.x)])
         return res
 
@@ -109,10 +126,10 @@ class Map:
         delta_y = abs(first[1] - self.map[i][j].parent[1])
         temp = self.check_neighbours(water, i, j)
         for k in temp[1]:
-            if 2 < k[0] < self.y - 3:
-                if 2 < k[1] < self.x - 3:
+            if 1 < k[0] < self.y - 1:
+                if 1 < k[1] < self.x - 1:
                     if randint(0, 2) > 0:
-                        self.map[k[0]][k[1]] = Cell(ground, gold, self.map[i][j].parent)
+                        self.map[k[0]][k[1]] = Cell(ground, None, self.map[i][j].parent)
                     # if delta_y > abs(first[0] - self.map[k[0]][k[1]].parent[0]):
                     #     if delta_x < abs(first[1] - self.map[k[0]][k[1]].parent[1]):
                     #         self.map[k[0]][k[1]] = Cell(ground, None, self.map[i][j].parent)
@@ -160,18 +177,46 @@ class Map:
         for o in range(1, len(sp)):
             i = sp[o][0]
             j = sp[o][1]
-            if self.map[i][j].type == ground:
-                self.unite_islands(sp[0], i, j)
-                for k in range(self.y):
-                    for l in range(self.x):
-                        self.map[i][j].checked = 0
+            self.unite_islands(sp[0], i, j)
+            for k in range(self.y):
+                for l in range(self.x):
+                    self.map[i][j].checked = 0
         for i in range(self.y):
             for j in range(self.x):
                 if self.map[i][j].type == ground:
                     self.gr += 1
 
-    def add_goverments(self):
-        pass
+    def generate_goverments(self):
+        capitals = []
+        for k in range(self.goverments_num):
+            i, j = randint(2, self.y - 2), randint(2, self.x - 2)
+            while True:
+                if self.map[i][j].type == ground:
+                    for t in capitals:
+                        if abs(t[0] - i) < 3 or abs(t[1] - j) < 3:
+                            i, j = randint(2, self.y - 2), randint(2, self.x - 2)
+                            break
+                    else:
+                        break
+                else:
+                    i, j = randint(2, self.y - 2), randint(2, self.x - 2)
+            capitals.append((i, j))
+            self.map[i][j].entity = gold
+        c = 1
+        for k in capitals:
+            a, sp = self.check_neighbours(ground, k[0], k[1])
+            self.map[k[0]][k[1]].goverment = c
+            self.map[k[0]][k[1]].capital = (k[0], k[1])
+            self.map[k[0]][k[1]].goverment_size = 1
+            self.map[k[0]][k[1]].entity = castle
+            self.goverments_money.append([10])
+            for t in sp:
+                self.map[t[0]][t[1]].capital = (k[0], k[1])
+                self.map[k[0]][k[1]].goverment_size = a
+                self.map[t[0]][t[1]].goverment_size = a
+                self.map[t[0]][t[1]].goverment = c
+            c += 1
+
     def check_neighbours(self, type: int, i: int, j: int) -> (int, list):
         neighbours = 0
         pos = []
@@ -232,6 +277,43 @@ class Map:
             else:
                 self.map[v[0]][v[1]].rank += self.map[u[0]][u[1]].rank
                 self.map[u[0]][u[1]].parent = v
+
+    def get_coords(self, pos: tuple) -> tuple:
+        x, y = pos
+        if self.selected and y > 24 * self.y:
+            pass
+            """Работа с худом"""
+        else:
+            x -= 22
+            y -= 24
+            dist = 50
+            q, r = -1, -1
+            for i in range(self.y):
+                for j in range(self.x):
+                    a = sqrt((self.centres[i][j][0] - x) ** 2 + (self.centres[i][j][1] - y) ** 2)
+                    if a < dist:
+                        dist = a
+                        q, r = i, j
+        print(q, r)
+        return (q, r)
+
+    def click_processing(self, coords: tuple):  # на вход клетка НЕ в пикселях
+        x, y = coords
+        if self.map[x][y].type == ground:
+            if self.selected:
+                pass
+                """Проверить возможность перехода"""
+            else:
+                if self.map[x][y].goverment is not None:
+                    if 10 < self.map[x][y].entity < 15:
+                        self.selected = (x, y)
+                        """Вывести худ и обвести границы хода"""
+                    else:
+                        """Вывести худ и обвести границы государства"""
+                else:
+                    self.selected = False
+        else:
+            self.selected = False
 
 
 class Cell:

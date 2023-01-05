@@ -44,21 +44,23 @@ def render():  # Загрузка стартовой земли
             a = m.map[y][x].type
             f = False
             if a == ground:
-                cell = load_image('ground2.png', colorkey=(255, 255, 255))
+                cell = load_image('colors\ground2.png', colorkey=(255, 255, 255))
                 b = m.map[y][x].goverment
                 if b is not None:
-                    cell = load_image(f'{dict_colors[b]}.png', colorkey=(255, 255, 255))
+                    cell = load_image(f'colors\{dict_colors[b]}.png', colorkey=(255, 255, 255))
                 c = m.map[y][x].entity
                 if c is not None:
                     f = True
-                    cell2 = load_image(f'{dict_entity[c]}.png', colorkey=(255, 255, 255))
+                    cell2 = load_image(f'entities\{dict_entity[c]}.png', colorkey=(255, 255, 255))
             elif a == water:
-                cell = load_image('water2.png', colorkey=(255, 255, 255))
+                cell = load_image('colors\water2.png', colorkey=(255, 255, 255))
             # y & 1 == 0 - быстрая проверка на чётность
             screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))  # -24
             if f:
                 screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
         step_x += 31
+    for i in m.borders:
+        pygame.draw.line(screen, (255, 255, 255), i[0], i[1], width=2)
 
 
 def load_image(name, colorkey=None):
@@ -86,7 +88,7 @@ if __name__ == '__main__':
     # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     screen = pygame.display.set_mode((width, height))
 
-    fps = 30
+    fps = 60
     clock = pygame.time.Clock()
 
     screen.fill((0, 0, 128))
@@ -99,7 +101,7 @@ if __name__ == '__main__':
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 m.click_processing(m.get_coords(event.pos))
-
+            render()
         clock.tick(fps)
         pygame.display.flip()
     pygame.quit()

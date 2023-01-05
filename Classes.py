@@ -57,6 +57,14 @@ class Map:
             self.map = self.pre_generate()
             self.after_generate()
         self.generate_goverments()
+        for i in range(self.y):
+            for j in range(self.x):
+                self.map[i][j].type = water
+        self.map[2][2].type = ground
+        self.map[2][3].type = ground
+        self.map[2][2].goverment = red
+        self.map[2][3].goverment = red
+
 
         for i in range(x):
             for j in range(y):
@@ -221,40 +229,52 @@ class Map:
         neighbours = 0
         pos = []
         if i & 1:
+            # Сосед справа сверху
             if i + 1 < self.y and self.map[i + 1][j].type == type:
                 neighbours += 1
                 pos.append((i + 1, j))
-            if i - 1 >= 0 and self.map[i - 1][j].type == type:
-                neighbours += 1
-                pos.append((i - 1, j))
-            if i - 1 >= 0 and j + 1 < self.x and self.map[i - 1][j + 1].type == type:
-                neighbours += 1
-                pos.append((i - 1, j + 1))
+            # Сосед справа снизу
             if i + 1 < self.y and j + 1 < self.x and self.map[i + 1][j + 1].type == type:
                 neighbours += 1
                 pos.append((i + 1, j + 1))
+            # Сосед слева сверху
+            if i - 1 >= 0 and self.map[i - 1][j].type == type:
+                neighbours += 1
+                pos.append((i - 1, j))
+            # Сосед слева снизу
+            if i - 1 >= 0 and j + 1 < self.x and self.map[i - 1][j + 1].type == type:
+                neighbours += 1
+                pos.append((i - 1, j + 1))
+            # Сосед снизу
             if j + 1 < self.x and self.map[i][j + 1].type == type:
                 neighbours += 1
                 pos.append((i, j + 1))
+            # Сосед сверху
             if j - 1 >= 0 and self.map[i][j - 1].type == type:
                 neighbours += 1
                 pos.append((i, j - 1))
         else:
-            if i + 1 < self.y and self.map[i + 1][j].type == type:
-                neighbours += 1
-                pos.append((i + 1, j))
-            if i - 1 >= 0 and self.map[i - 1][j].type == type:
-                neighbours += 1
-                pos.append((i - 1, j))
+            # Сосед справа сверху
             if i + 1 < self.y and j - 1 >= 0 and self.map[i + 1][j - 1].type == type:
                 neighbours += 1
                 pos.append((i + 1, j - 1))
+            # Сосед справа снизу
+            if i + 1 < self.y and self.map[i + 1][j].type == type:
+                neighbours += 1
+                pos.append((i + 1, j))
+            # Сосед слева сверху
             if i - 1 >= 0 and j - 1 >= 0 and self.map[i - 1][j - 1].type == type:
                 neighbours += 1
                 pos.append((i - 1, j - 1))
+            # Сосед слева снизу
+            if i - 1 >= 0 and self.map[i - 1][j].type == type:
+                neighbours += 1
+                pos.append((i - 1, j))
+            # Сосед снизу
             if j + 1 < self.x and self.map[i][j + 1].type == type:
                 neighbours += 1
                 pos.append((i, j + 1))
+            # Сосед сверху
             if j - 1 >= 0 and self.map[i][j - 1].type == type:
                 neighbours += 1
                 pos.append((i, j - 1))
@@ -304,16 +324,70 @@ class Map:
                 pass
                 """Проверить возможность перехода"""
             else:
+                for i in range(self.y):
+                    for j in range(self.x):
+                        self.map[i][j].checked = 0
                 if self.map[x][y].goverment is not None:
-                    if 10 < self.map[x][y].entity < 15:
+                    if self.map[x][y].entity is not None and 10 < self.map[x][y].entity < 15:
                         self.selected = (x, y)
                         """Вывести худ и обвести границы хода"""
                     else:
+                        self.goverment_borders(x, y)
                         """Вывести худ и обвести границы государства"""
                 else:
                     self.selected = False
         else:
             self.selected = False
+
+    def goverment_borders(self, x, y):
+        a, t = self.check_neighbours(water, x, y)
+        for i in t:
+            if self.map[i[0]][i[1]].goverment == self.map[x][y].goverment:
+                self.goverment_borders(i[0], i[1])
+            else:
+                diff_x = x - i[0]
+                diff_y = y - i[1]
+                if diff_x == 1:
+                    if diff_y - (i[0] & 1) == -1:
+                        print("Справа сверху")
+                    else:
+                        print("Справа снизу")
+                elif diff_x == 0:
+                    if diff_y == 1:
+                        print("Сверху")
+                    else:
+                        print("Снизу")
+                else:
+                    if diff_y - (i[0] & 1) == -1:
+                        print("Слева сверху")
+                    else:
+                        print("Слева снизу")
+        a, t = self.check_neighbours(ground, x, y)
+        sp = []
+        for i in t:
+            if not self.map[i[0]][i[1]].checked:
+                self.map[i[0]][i[1]].checked = 1
+                if self.map[i[0]][i[1]].goverment == self.map[x][y].goverment:
+                    self.goverment_borders(i[0], i[1])
+                else:
+                    diff_x = i[0] - x
+                    diff_y = i[1] - y
+                    if diff_x == 1:
+                        if diff_y - (i[0] & 1) == -1:
+                            print("Справа сверху з")
+                        else:
+                            print("Справа снизу з")
+                    elif diff_x == 0:
+                        if diff_y == 1:
+                            print("Сверху з")
+                        else:
+                            print("Снизу з")
+                    else:
+                        if diff_y - (i[0] & 1) == -1:
+                            print("Слева сверху з")
+                        else:
+                            print("Слева снизу з")
+
 
 
 class Cell:

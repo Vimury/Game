@@ -38,13 +38,14 @@ class Map:
         # False - если ничего не выбрано, True - если выбрано государство, Tuple - если выбран персонаж
         self.goverments_num = 4  # Количество государств
         self.goverments_money = []
+        self.goverments_earnings = []
         self.centres = []
         self.borders = []
         step_x = 0
         for i in range(self.y):
             row = []
             for j in range(self.x):
-                row.append((step_x, (j * 36 + (18 if i & 1 else 0))))
+                row.append((step_x + 22, (j * 36 + (18 if i & 1 else 0)) + 24))
             step_x += 31
             self.centres.append(row)
             print(row)
@@ -222,67 +223,154 @@ class Map:
             self.map[k[0]][k[1]].goverment_size = 1
             self.map[k[0]][k[1]].entity = castle
             self.goverments_money.append([10])
+            self.goverments_earnings.append([a + 1])
             for t in sp:
                 self.map[t[0]][t[1]].capital = (k[0], k[1])
                 self.map[k[0]][k[1]].goverment_size = a
                 self.map[t[0]][t[1]].goverment_size = a
                 self.map[t[0]][t[1]].goverment = c
+                if self.map[t[0]][t[1]].entity == tree:
+                    self.goverments_earnings[-1][-1] -= 1
             c += 1
 
     def check_neighbours(self, type: int, i: int, j: int) -> (int, list):
         neighbours = 0
         pos = []
-        if i & 1:
-            # Сосед справа сверху
-            if i + 1 < self.y and self.map[i + 1][j].type == type:
-                neighbours += 1
-                pos.append((i + 1, j))
-            # Сосед справа снизу
-            if i + 1 < self.y and j + 1 < self.x and self.map[i + 1][j + 1].type == type:
-                neighbours += 1
-                pos.append((i + 1, j + 1))
-            # Сосед слева сверху
-            if i - 1 >= 0 and self.map[i - 1][j].type == type:
-                neighbours += 1
-                pos.append((i - 1, j))
-            # Сосед слева снизу
-            if i - 1 >= 0 and j + 1 < self.x and self.map[i - 1][j + 1].type == type:
-                neighbours += 1
-                pos.append((i - 1, j + 1))
-            # Сосед снизу
-            if j + 1 < self.x and self.map[i][j + 1].type == type:
-                neighbours += 1
-                pos.append((i, j + 1))
-            # Сосед сверху
-            if j - 1 >= 0 and self.map[i][j - 1].type == type:
-                neighbours += 1
-                pos.append((i, j - 1))
-        else:
-            # Сосед справа сверху
-            if i + 1 < self.y and j - 1 >= 0 and self.map[i + 1][j - 1].type == type:
-                neighbours += 1
-                pos.append((i + 1, j - 1))
-            # Сосед справа снизу
-            if i + 1 < self.y and self.map[i + 1][j].type == type:
-                neighbours += 1
-                pos.append((i + 1, j))
-            # Сосед слева сверху
-            if i - 1 >= 0 and j - 1 >= 0 and self.map[i - 1][j - 1].type == type:
-                neighbours += 1
-                pos.append((i - 1, j - 1))
-            # Сосед слева снизу
-            if i - 1 >= 0 and self.map[i - 1][j].type == type:
-                neighbours += 1
-                pos.append((i - 1, j))
-            # Сосед снизу
-            if j + 1 < self.x and self.map[i][j + 1].type == type:
-                neighbours += 1
-                pos.append((i, j + 1))
-            # Сосед сверху
-            if j - 1 >= 0 and self.map[i][j - 1].type == type:
-                neighbours += 1
-                pos.append((i, j - 1))
+        a = i & 1
+        # Сосед справа сверху
+        if i + 1 < self.y and j - 1 + (i & 1) >= 0 and self.map[i + 1][j - 1 + (i & 1)].type == type:
+            neighbours += 1
+            pos.append((i + 1, j - 1 + (i & 1)))
+        # Сосед справа снизу
+        if i + 1 < self.y and j + (i & 1) < self.x and self.map[i + 1][j + (i & 1)].type == type:
+            neighbours += 1
+            pos.append((i + 1, j + (i & 1)))
+        # Сосед слева сверху
+        if i - 1 >= 0 and j - 1 >= 0 and self.map[i - 1][j - 1 + (i & 1)].type == type:
+            neighbours += 1
+            pos.append((i - 1, j - 1 + (i & 1)))
+        # Сосед слева снизу
+        if i - 1 >= 0 and j + (i & 1) and self.map[i - 1][j + (i & 1)].type == type:
+            neighbours += 1
+            pos.append((i - 1, j + (i & 1)))
+        # Сосед снизу
+        if j + 1 < self.x and self.map[i][j + 1].type == type:
+            neighbours += 1
+            pos.append((i, j + 1))
+        # Сосед сверху
+        if j - 1 >= 0 and self.map[i][j - 1].type == type:
+            neighbours += 1
+            pos.append((i, j - 1))
         return (neighbours, pos)
+
+    def get_coords(self, pos: tuple, step_x, step_y) -> tuple:
+        x, y = pos[0] - step_x, pos[1] + step_y
+        """Добавить работу с худом"""
+        dist = 64
+        q, r = -5, -5
+        for i in range(self.y):
+            for j in range(self.x):
+                a = sqrt((self.centres[i][j][0] - x) ** 2 + (self.centres[i][j][1] - y) ** 2)
+                if a < dist:
+                    dist = a
+                    q, r = i, j
+        print(q, r)
+        return (q, r)
+
+    def click_processing(self, coords: tuple):  # на вход клетка НЕ в пикселях
+        self.borders = []
+        x, y = coords
+        if self.map[x][y].type == ground:
+            if self.selected is tuple:
+                pass
+                """Проверить возможность перехода"""
+            else:
+                for i in range(self.y):
+                    for j in range(self.x):
+                        self.map[i][j].checked = 0
+                if self.map[x][y].goverment is not None:
+                    if self.map[x][y].entity is not None and 10 < self.map[x][y].entity < 15:
+                        self.selected = (x, y)
+                        """Вывести худ и обвести границы хода"""
+                    else:
+                        self.borders = self.goverment_borders(x, y)
+                        self.selected = True
+                else:
+                    self.selected = False
+        else:
+            self.selected = False
+
+    def goverment_borders(self, x, y):
+        sp = []
+        self.map[x][y].checked = 1
+        a, t = self.check_neighbours(water, x, y)
+        for i in t:
+            diff_x = i[0] - x
+            diff_y = i[1] - y
+            if diff_x == 1:
+                if diff_y - (x & 1) == -1:
+                    a, b = self.centres[x][y]
+                    sp.append([(a + 22, b), (a + 11, b - 18)])
+                    # print("Справа сверху")
+                else:
+                    a, b = self.centres[x][y]
+                    sp.append([(a + 22, b), (a + 11, b + 18)])
+                    # print("Справа снизу")
+            elif diff_x == 0:
+                if diff_y == 1:
+                    a, b = self.centres[x][y]
+                    sp.append([(a - 11, b + 18), (a + 11, b + 18)])
+                    # print("Снизу")
+                else:
+                    a, b = self.centres[x][y]
+                    sp.append([(a - 11, b - 18), (a + 11, b - 18)])
+                    # print("Сверху")
+            else:
+                if diff_y - (x & 1) == -1:
+                    a, b = self.centres[x][y]
+                    sp.append([(a - 22, b), (a - 11, b - 18)])
+                    # print("Слева сверху")
+                else:
+                    a, b = self.centres[x][y]
+                    sp.append([(a - 22, b), (a - 11, b + 18)])
+                    # print("Слева снизу")
+        a, t = self.check_neighbours(ground, x, y)
+        for i in t:
+            if not self.map[i[0]][i[1]].checked:
+                if self.map[i[0]][i[1]].goverment == self.map[x][y].goverment:
+                    for i in self.goverment_borders(i[0], i[1]):
+                        sp.append(i)
+                else:
+                    diff_x = i[0] - x
+                    diff_y = i[1] - y
+                    if diff_x == 1:
+                        if diff_y - (x & 1) == -1:
+                            a, b = self.centres[x][y]
+                            sp.append([(a + 22, b), (a + 11, b - 18)])
+                            # print("Справа сверху")
+                        else:
+                            a, b = self.centres[x][y]
+                            sp.append([(a + 22, b), (a + 11, b + 18)])
+                            # print("Справа снизу")
+                    elif diff_x == 0:
+                        if diff_y == 1:
+                            a, b = self.centres[x][y]
+                            sp.append([(a - 11, b + 18), (a + 11, b + 18)])
+                            # print("Снизу")
+                        else:
+                            a, b = self.centres[x][y]
+                            sp.append([(a - 11, b - 18), (a + 11, b - 18)])
+                            # print("Сверху")
+                    else:
+                        if diff_y - (x & 1) == -1:
+                            a, b = self.centres[x][y]
+                            sp.append([(a - 22, b), (a - 11, b - 18)])
+                            # print("Слева сверху")
+                        else:
+                            a, b = self.centres[x][y]
+                            sp.append([(a - 22, b), (a - 11, b + 18)])
+                            # print("Слева снизу")
+        return sp
 
     def get(self, x: int, y: int) -> tuple:
         if self.map[x][y].parent != (x, y):
@@ -301,120 +389,6 @@ class Map:
             else:
                 self.map[v[0]][v[1]].rank += self.map[u[0]][u[1]].rank
                 self.map[u[0]][u[1]].parent = v
-
-    def get_coords(self, pos: tuple) -> tuple:
-        x, y = pos
-        if self.selected and y > 24 * self.y:
-            pass
-            """Работа с худом"""
-        else:
-            x -= 22
-            y -= 24
-            dist = 50
-            q, r = -1, -1
-            for i in range(self.y):
-                for j in range(self.x):
-                    a = sqrt((self.centres[i][j][0] - x) ** 2 + (self.centres[i][j][1] - y) ** 2)
-                    if a < dist:
-                        dist = a
-                        q, r = i, j
-        print(q, r)
-        return (q, r)
-
-    def click_processing(self, coords: tuple):  # на вход клетка НЕ в пикселях
-        self.borders = []
-        x, y = coords
-        if self.map[x][y].type == ground:
-            if self.selected:
-                pass
-                """Проверить возможность перехода"""
-            else:
-                for i in range(self.y):
-                    for j in range(self.x):
-                        self.map[i][j].checked = 0
-                if self.map[x][y].goverment is not None:
-                    if self.map[x][y].entity is not None and 10 < self.map[x][y].entity < 15:
-                        self.selected = (x, y)
-                        """Вывести худ и обвести границы хода"""
-                    else:
-                        self.borders = self.goverment_borders(x, y)
-                        """Вывести худ"""
-                else:
-                    self.selected = False
-        else:
-            self.selected = False
-
-    def goverment_borders(self, x, y):
-        sp = []
-        self.map[x][y].checked = 1
-        a, t = self.check_neighbours(water, x, y)
-        for i in t:
-            diff_x = i[0] - x
-            diff_y = i[1] - y
-            if diff_x == 1:
-                if diff_y - (x & 1) == -1:
-                    a, b = self.centres[x][y]
-                    sp.append([(a + 44, b + 24), (a + 33, b + 6)])
-                    print("Справа сверху")
-                else:
-                    a, b = self.centres[x][y]
-                    sp.append([(a + 44, b + 24), (a + 33, b + 42)])
-                    print("Справа снизу")
-            elif diff_x == 0:
-                if diff_y == 1:
-                    a, b = self.centres[x][y]
-                    sp.append([(a + 12, b + 42), (a + 33, b + 42)])
-                    print("Снизу")
-                else:
-                    a, b = self.centres[x][y]
-                    sp.append([(a + 12, b + 6), (a + 33, b + 6)])
-                    print("Сверху")
-            else:
-                if diff_y - (x & 1) == -1:
-                    a, b = self.centres[x][y]
-                    sp.append([(a, b + 24), (a + 11, b + 6)])
-                    print("Слева сверху")
-                else:
-                    a, b = self.centres[x][y]
-                    sp.append([(a, b + 24), (a + 11, b + 42)])
-                    print("Слева снизу")
-        a, t = self.check_neighbours(ground, x, y)
-        for i in t:
-            if not self.map[i[0]][i[1]].checked:
-                if self.map[i[0]][i[1]].goverment == self.map[x][y].goverment:
-                    for i in self.goverment_borders(i[0], i[1]):
-                        sp.append(i)
-                else:
-                    diff_x = i[0] - x
-                    diff_y = i[1] - y
-                    if diff_x == 1:
-                        if diff_y - (x & 1) == -1:
-                            a, b = self.centres[x][y]
-                            sp.append([(a + 44, b + 24), (a + 33, b + 6)])
-                            print("Справа сверху")
-                        else:
-                            a, b = self.centres[x][y]
-                            sp.append([(a + 44, b + 24), (a + 33, b + 42)])
-                            print("Справа снизу")
-                    elif diff_x == 0:
-                        if diff_y == 1:
-                            a, b = self.centres[x][y]
-                            sp.append([(a + 12, b + 42), (a + 33, b + 42)])
-                            print("Снизу")
-                        else:
-                            a, b = self.centres[x][y]
-                            sp.append([(a + 12, b + 6), (a + 33, b + 6)])
-                            print("Сверху")
-                    else:
-                        if diff_y - (x & 1) == -1:
-                            a, b = self.centres[x][y]
-                            sp.append([(a, b + 24), (a + 11, b + 6)])
-                            print("Слева сверху")
-                        else:
-                            a, b = self.centres[x][y]
-                            sp.append([(a, b + 24), (a + 11, b + 42)])
-                            print("Слева снизу")
-        return sp
 
 
 class Cell:

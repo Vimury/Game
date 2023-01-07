@@ -28,17 +28,18 @@ big_tower = 9
 town = 10
 
 villager = 11
-# Не придумал название
+man2 = 12
 knight = 13
 big_knight = 14
 
 dict_entity = {1: 'tree', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'farm', 7: 'big_farm', 8: 'tower',
-               9: 'big_tower', 10: 'town', 11: 'villager', 12: 'None', 13: 'knight', 14: 'big_knight'}
+               9: 'big_tower', 10: 'town', 11: 'villager', 12: 'man2', 13: 'knight', 14: 'big_knight'}
 
 
-def render():  # Загрузка стартовой земли
+def render(step_xx, step_y):
+    screen.fill((0, 0, 128))
+    step_x = step_xx
     # step_x = -15
-    step_x = 0
     for y in range(y_size):
         for x in range(x_size):
             a = m.map[y][x].type
@@ -53,14 +54,41 @@ def render():  # Загрузка стартовой земли
                     f = True
                     cell2 = load_image(f'entities\{dict_entity[c]}.png', colorkey=(255, 255, 255))
             elif a == water:
-                cell = load_image('colors\water2.png', colorkey=(255, 255, 255))
+                cell = load_image('colors\water.png', colorkey=(255, 255, 255))
             # y & 1 == 0 - быстрая проверка на чётность
-            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0)))  # -24
+            screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0) - step_y))  # -24
             if f:
-                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0)))
+                screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0) - step_y))
         step_x += 31
     for i in m.borders:
-        pygame.draw.line(screen, (255, 255, 255), i[0], i[1], width=2)
+        pygame.draw.line(screen, (255, 255, 255), (i[0][0] + step_xx, i[0][1] - step_y),
+                         (i[1][0] + step_xx, i[1][1] - step_y), width=2)
+    if m.selected:
+        # создадим группу, содержащую все спрайты
+        all_sprites = pygame.sprite.Group()
+
+        sprite_coin = pygame.sprite.Sprite()
+        sprite_coin.image = load_image('hud_elems\coin.png', colorkey=(255, 255, 255))
+        sprite_coin.rect = sprite_coin.image.get_rect()
+        sprite_coin.rect.x = 15
+        sprite_coin.rect.y = 15
+        all_sprites.add(sprite_coin)
+        # screen.blit(load_image('hud_elems\coin.png', colorkey=(255, 255, 255)), (15, 15))
+        font = pygame.font.Font(None, 60)
+        mon = m.goverments_money[0][0]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
+        text = font.render(str(mon), True, (255, 255, 255))
+        screen.blit(text, (110, 45))
+
+        earning = m.goverments_earnings[0][0]  # Пока что выводятся доходы нулевой провинции нулевого гос-ва
+        text = font.render(f'+{earning}' if earning > 0 else str(earning), True, (255, 255, 255))
+        screen.blit(text, (width // 2, 45))
+
+
+        screen.blit(load_image('hud_elems\end_turn.png', colorkey=(136, 0, 21)), (width - 250, height - 100))
+        screen.blit(load_image('hud_elems\man0.png', colorkey=(255, 255, 255)), (width - 500, height - 100))
+        screen.blit(load_image('hud_elems\house.png', colorkey=(255, 255, 255)), (width - 750, height - 100))
+        screen.blit(load_image('hud_elems\\undo.png', colorkey=(255, 255, 255)), (width - 1000, height - 100))
+        all_sprites.draw(screen)
 
 
 def load_image(name, colorkey=None):
@@ -81,7 +109,16 @@ def load_image(name, colorkey=None):
 
 if __name__ == '__main__':
     x_size, y_size = 20, 30
+
+    """Переменные для render"""
+    step_x = 0
+    step_y = 30
+
+    # step_x = -15
+    # step_y = -24
+
     m = Map(x_size, y_size)
+
     pygame.init()
     pygame.display.set_caption('Countries of century knights')
     size = width, height = 1000, 750
@@ -94,14 +131,25 @@ if __name__ == '__main__':
     screen.fill((0, 0, 128))
     # screen.fill((0, 0, 0))
     running = True
-    render()
+    rmb_pressed = False
+    render(step_x, step_y)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif rmb_pressed and event.type == pygame.MOUSEBUTTONUP:
+                rmb_pressed = False
+            elif rmb_pressed and event.type == pygame.MOUSEMOTION:
+                temp_x, temp_y = event.pos
+                step_x = max(-width // 5 * 4, min(temp_x - start_x, width // 5 * 4))
+                step_y = max(-height // 2, min(start_y - temp_y, height // 2))
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                m.click_processing(m.get_coords(event.pos))
-            render()
+                if event.button == 1:
+                    m.click_processing(m.get_coords(event.pos, step_x, step_y))
+                elif event.button == 3:
+                    start_x, start_y = event.pos[0] - step_x, event.pos[1] + step_y
+                    rmb_pressed = True
+            render(step_x, step_y)
         clock.tick(fps)
         pygame.display.flip()
     pygame.quit()

@@ -25,3 +25,18 @@
 #             else:
 #                 for k in temp[1]:
 #                     self.unite(i, j, k[0], k[1])
+
+
+# if self.map[i[0]][i[1]].goverment == self.map[x][y].goverment:
+#     for j in self.move_borders(i[0], i[1]):
+#         sp.append(j)
+# else:
+#     neighbours = self.check_neighbours(water, i[0], i[1])[1]
+#     for j in neighbours:
+#
+#     neighbours = self.check_neighbours(ground, i[0], i[1])[1]
+#     for j in neighbours:
+#         diff_x = j[0] - i[0]
+#         diff_y = j[1] - i[1]
+#         for k in self.do_borders(i[0], i[1], diff_x, diff_y):
+#             sp.append(k)

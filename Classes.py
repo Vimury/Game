@@ -1,5 +1,7 @@
 from math import sqrt
 
+import pygame.sprite
+
 '''Прописал id типа местности'''
 water = 0
 ground = 1
@@ -31,16 +33,28 @@ from random import randint, choices
 
 
 class Map:
-    def __init__(self, x, y):
+    def __init__(self, x, y, goverments_num):
         self.x = x
         self.y = y
-        self.selected = False  # 3 вариации
+        # Размер поля в шестиугольниках
+        self.selected = False
+        # selected - 3 вариации
         # False - если ничего не выбрано, True - если выбрано государство, Tuple - если выбран персонаж
-        self.goverments_num = 4  # Количество государств
+        self.goverments_num = goverments_num  # Количество государств
         self.goverments_money = []
+        # goverments_money[i][j] - количество денег j-той провинции i-того государства
         self.goverments_earnings = []
+        # goverments_money[i][j] - заработок j-той провинции i-того государства
         self.centres = []
+        # centres[i][j] - расположение центра [i][j] шестиугольника(в пикселях)
         self.borders = []
+        # Хранение кортежей, между точками которых нужно провести границы
+        self.move = 0
+        # Чей ход
+        self.where_click = ()
+        # Куда был сделан последний клик на государство
+        self.bfs_queue = []
+        # Надо для обхода в ширину
         step_x = 0
         for i in range(self.y):
             row = []
@@ -50,6 +64,7 @@ class Map:
             self.centres.append(row)
             print(row)
         self.gr = 0
+        # Количество земли на карте
         self.map = self.pre_generate()
         self.after_generate()
         max_gr = (self.x - 4) * (self.y - 4) * 3 // 4  # Максимальное количество клеток земли на карте
@@ -200,12 +215,12 @@ class Map:
                     self.gr += 1
 
     def generate_goverments(self):
-        capitals = []
+        self.capitals = []
         for k in range(self.goverments_num):
             i, j = randint(2, self.y - 2), randint(2, self.x - 2)
             while True:
                 if self.map[i][j].type == ground:
-                    for t in capitals:
+                    for t in self.capitals:
                         if abs(t[0] - i) < 3 or abs(t[1] - j) < 3:
                             i, j = randint(2, self.y - 2), randint(2, self.x - 2)
                             break
@@ -213,10 +228,10 @@ class Map:
                         break
                 else:
                     i, j = randint(2, self.y - 2), randint(2, self.x - 2)
-            capitals.append((i, j))
+            self.capitals.append((i, j))
             self.map[i][j].entity = gold
         c = 1
-        for k in capitals:
+        for k in self.capitals:
             a, sp = self.check_neighbours(ground, k[0], k[1])
             self.map[k[0]][k[1]].goverment = c
             self.map[k[0]][k[1]].capital = (k[0], k[1])
@@ -231,6 +246,7 @@ class Map:
                 self.map[t[0]][t[1]].goverment = c
                 if self.map[t[0]][t[1]].entity == tree:
                     self.goverments_earnings[-1][-1] -= 1
+            self.goverments_money[-1][0] -= self.goverments_earnings[-1][0]
             c += 1
 
     def check_neighbours(self, type: int, i: int, j: int) -> (int, list):
@@ -264,7 +280,9 @@ class Map:
         return (neighbours, pos)
 
     def get_coords(self, pos: tuple, step_x, step_y) -> tuple:
-        x, y = pos[0] - step_x, pos[1] + step_y
+        x, y = pos
+        x -= step_x
+        y += step_y
         """Добавить работу с худом"""
         dist = 64
         q, r = -5, -5
@@ -293,83 +311,105 @@ class Map:
                         self.selected = (x, y)
                         """Вывести худ и обвести границы хода"""
                     else:
-                        self.borders = self.goverment_borders(x, y)
-                        self.selected = True
+                        if self.map[x][y].goverment == (self.move + 1):
+                            self.where_click = (x, y)
+                            self.borders = self.goverment_borders(x, y)
+                            self.selected = True
                 else:
                     self.selected = False
         else:
             self.selected = False
 
-    def goverment_borders(self, x, y):
+    def goverment_borders(self, x: int, y: int) -> list:
         sp = []
         self.map[x][y].checked = 1
         a, t = self.check_neighbours(water, x, y)
         for i in t:
             diff_x = i[0] - x
             diff_y = i[1] - y
-            if diff_x == 1:
-                if diff_y - (x & 1) == -1:
-                    a, b = self.centres[x][y]
-                    sp.append([(a + 22, b), (a + 11, b - 18)])
-                    # print("Справа сверху")
-                else:
-                    a, b = self.centres[x][y]
-                    sp.append([(a + 22, b), (a + 11, b + 18)])
-                    # print("Справа снизу")
-            elif diff_x == 0:
-                if diff_y == 1:
-                    a, b = self.centres[x][y]
-                    sp.append([(a - 11, b + 18), (a + 11, b + 18)])
-                    # print("Снизу")
-                else:
-                    a, b = self.centres[x][y]
-                    sp.append([(a - 11, b - 18), (a + 11, b - 18)])
-                    # print("Сверху")
-            else:
-                if diff_y - (x & 1) == -1:
-                    a, b = self.centres[x][y]
-                    sp.append([(a - 22, b), (a - 11, b - 18)])
-                    # print("Слева сверху")
-                else:
-                    a, b = self.centres[x][y]
-                    sp.append([(a - 22, b), (a - 11, b + 18)])
-                    # print("Слева снизу")
+            for j in self.do_borders(x, y, diff_x, diff_y):
+                sp.append(j)
         a, t = self.check_neighbours(ground, x, y)
         for i in t:
             if not self.map[i[0]][i[1]].checked:
                 if self.map[i[0]][i[1]].goverment == self.map[x][y].goverment:
-                    for i in self.goverment_borders(i[0], i[1]):
-                        sp.append(i)
+                    for j in self.goverment_borders(i[0], i[1]):
+                        sp.append(j)
                 else:
                     diff_x = i[0] - x
                     diff_y = i[1] - y
-                    if diff_x == 1:
-                        if diff_y - (x & 1) == -1:
-                            a, b = self.centres[x][y]
-                            sp.append([(a + 22, b), (a + 11, b - 18)])
-                            # print("Справа сверху")
-                        else:
-                            a, b = self.centres[x][y]
-                            sp.append([(a + 22, b), (a + 11, b + 18)])
-                            # print("Справа снизу")
-                    elif diff_x == 0:
-                        if diff_y == 1:
-                            a, b = self.centres[x][y]
-                            sp.append([(a - 11, b + 18), (a + 11, b + 18)])
-                            # print("Снизу")
-                        else:
-                            a, b = self.centres[x][y]
-                            sp.append([(a - 11, b - 18), (a + 11, b - 18)])
-                            # print("Сверху")
-                    else:
-                        if diff_y - (x & 1) == -1:
-                            a, b = self.centres[x][y]
-                            sp.append([(a - 22, b), (a - 11, b - 18)])
-                            # print("Слева сверху")
-                        else:
-                            a, b = self.centres[x][y]
-                            sp.append([(a - 22, b), (a - 11, b + 18)])
-                            # print("Слева снизу")
+                    for j in self.do_borders(x, y, diff_x, diff_y):
+                        sp.append(j)
+        return sp
+
+    def move_borders(self, x: int, y: int) -> list:
+        sp = []
+        if self.selected is tuple:
+            pass
+        else:
+            t = self.check_neighbours(water, x, y)[1]
+            for i in t:
+                diff_x = i[0] - x
+                diff_y = i[1] - y
+                for j in self.do_borders(x, y, diff_x, diff_y):
+                    sp.append(j)
+            if self.map[x][y].capital == self.map[self.where_click[0]][self.where_click[1]].capital:
+                self.map[x][y].checked = 1
+                t = self.check_neighbours(ground, x, y)[1]
+                for i in t:
+                    if not self.map[i[0]][i[1]].checked:
+                        self.bfs_queue.append((i[0], i[1]))
+                        self.map[i[0]][i[1]].checked = 1
+                while self.bfs_queue:
+                    ind = 0
+                    for i in range(len(self.bfs_queue)):
+                        if self.map[self.bfs_queue[i][0]][self.bfs_queue[i][1]].capital == \
+                                self.map[self.where_click[0]][self.where_click[1]].capital:
+                            ind = i
+                            break
+                    a, b = self.bfs_queue[ind][0], self.bfs_queue[ind][1]
+                    del self.bfs_queue[ind]
+                    if self.map[a][b].checked == 1:
+                        for j in self.move_borders(a, b):
+                            sp.append(j)
+            else:
+                for i in self.check_neighbours(ground, x, y)[1]:
+                    if not self.map[i[0]][i[1]].checked:
+                        diff_x = i[0] - x
+                        diff_y = i[1] - y
+                        for k in self.do_borders(x, y, diff_x, diff_y):
+                            sp.append(k)
+        return sp
+
+    def do_borders(self, x, y, diff_x, diff_y):
+        sp = []
+        if diff_x == 1:
+            if diff_y - (x & 1) == -1:
+                a, b = self.centres[x][y]
+                sp.append([(a + 22, b), (a + 11, b - 18)])
+                # print("Справа сверху")
+            else:
+                a, b = self.centres[x][y]
+                sp.append([(a + 22, b), (a + 11, b + 18)])
+                # print("Справа снизу")
+        elif diff_x == 0:
+            if diff_y == 1:
+                a, b = self.centres[x][y]
+                sp.append([(a - 11, b + 18), (a + 11, b + 18)])
+                # print("Снизу")
+            else:
+                a, b = self.centres[x][y]
+                sp.append([(a - 11, b - 18), (a + 11, b - 18)])
+                # print("Сверху")
+        else:
+            if diff_y - (x & 1) == -1:
+                a, b = self.centres[x][y]
+                sp.append([(a - 22, b), (a - 11, b - 18)])
+                # print("Слева сверху")
+            else:
+                a, b = self.centres[x][y]
+                sp.append([(a - 21, b), (a - 10, b + 18)])
+                # print("Слева снизу")
         return sp
 
     def get(self, x: int, y: int) -> tuple:

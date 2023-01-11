@@ -55,6 +55,7 @@ class Map:
         # Куда был сделан последний клик на государство
         self.bfs_queue = []
         # Надо для обхода в ширину
+        self.buy_character = None
         step_x = 0
         for i in range(self.y):
             row = []
@@ -316,7 +317,22 @@ class Map:
                             self.borders = self.goverment_borders(x, y)
                             self.selected = True
                 else:
-                    self.selected = False
+                    if self.selected:
+                        if self.goverments_money[self.move][0] >= (self.buy_character * 10) + 10:
+                            t = self.check_neighbours(ground, x, y)[1]
+                            for i in t:
+                                if self.map[i[0]][i[1]].capital == \
+                                        self.map[self.where_click[0]][self.where_click[1]].capital:
+                                    self.map[x][y].goverment = self.map[self.where_click[0]][self.where_click[1]].goverment
+                                    self.map[x][y].capital = self.map[self.where_click[0]][self.where_click[1]].capital
+                                    self.map[self.where_click[0]][self.where_click[1]].goverment_size += 1
+                                    self.map[x][y].entity = self.buy_character + 11
+                                    self.goverments_money[self.move][0] -= (self.buy_character * 10) + 10
+                                    break
+                            else:
+                                self.selected = False
+                        else:
+                            self.selected = False
         else:
             self.selected = False
 

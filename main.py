@@ -36,7 +36,6 @@ dict_entity = {1: 'tree', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'far
                9: 'big_tower', 10: 'town', 11: 'villager', 12: 'man2', 13: 'knight', 14: 'big_knight'}
 
 
-
 def render(step_xx, step_y):
     screen.fill((0, 0, 128))
     step_x = step_xx
@@ -82,10 +81,10 @@ def render(step_xx, step_y):
         screen.blit(load_image('hud_elems\house.png', colorkey=(255, 255, 255)), (width - 750, height - 100))
         screen.blit(load_image('hud_elems\\undo.png', colorkey=(255, 255, 255)), (width - 1000, height - 100))
 
-        if buy_character is not None:
-            buy = load_image(f'hud_elems\man{buy_character}.png', colorkey=(255, 255, 255))
+        if m.buy_character is not None:
+            buy = load_image(f'hud_elems\man{m.buy_character}.png', colorkey=(255, 255, 255))
             screen.blit(buy, (width * 0.38, height - 200))
-            text = font.render(f'${buy_character * 10 + 10}', True, (255, 255, 255))
+            text = font.render(f'${m.buy_character * 10 + 10}', True, (255, 255, 255))
             screen.blit(text, (width * 0.4, height - 60))
 
 
@@ -134,7 +133,7 @@ if __name__ == '__main__':
     # screen.fill((0, 0, 0))
     running = True
     rmb_pressed = False
-    buy_character = None
+    m.buy_character = None
     # None - если нет покупок, 0-3 - если покупаются персонажи
     buy_building = None
     # None - если нет покупок, 0-2 - если покупаются сооружения
@@ -162,11 +161,12 @@ if __name__ == '__main__':
                             m.selected = False
                             for i in range(len(m.goverments_money[move])):
                                 m.goverments_money[move][i] += m.goverments_earnings[move][i]
-                        elif charact_shop[0][0] < x < charact_shop[1][0] and charact_shop[0][1] < y < charact_shop[1][1]:
-                            if buy_character is None:
-                                buy_character = 0
+                        elif charact_shop[0][0] < x < charact_shop[1][0] and charact_shop[0][1] < y < charact_shop[1][
+                            1]:
+                            if m.buy_character is None:
+                                m.buy_character = 0
                             else:
-                                buy_character = (buy_character + 1) % 4
+                                m.buy_character = (m.buy_character + 1) % 4
                             for i in range(m.y):
                                 for j in range(m.x):
                                     m.map[i][j].checked = 0
@@ -180,10 +180,10 @@ if __name__ == '__main__':
                             """Возврат хода назад"""
                             pass
                         else:
-                            buy_character = None
                             m.click_processing(m.get_coords((x, y), step_x, step_y))
+                            m.buy_character = None
                     else:
-                        buy_character = None
+                        m.buy_character = None
                         m.click_processing(m.get_coords((x, y), step_x, step_y))
                 elif event.button == 3:
                     start_x, start_y = event.pos[0] - step_x, event.pos[1] + step_y

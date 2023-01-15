@@ -28,12 +28,12 @@ big_tower = 9
 town = 10
 
 villager = 11
-man2 = 12
+man1 = 12
 knight = 13
 big_knight = 14
 
 dict_entity = {1: 'tree', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'farm', 7: 'big_farm', 8: 'tower',
-               9: 'big_tower', 10: 'town', 11: 'villager', 12: 'man2', 13: 'knight', 14: 'big_knight'}
+               9: 'big_tower', 10: 'town', 11: 'villager', 12: 'man1', 13: 'knight', 14: 'big_knight'}
 
 
 def render(step_xx, step_y):
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     step_x = 0
     step_y = 30
 
-    goverments_num = 4
+    goverments_num = 2
     m = Map(x_size, y_size, goverments_num)
     move = 0
 
@@ -155,14 +155,21 @@ if __name__ == '__main__':
                     x, y = event.pos
                     if m.selected:
                         if end_turn_pos[0][0] < x < end_turn_pos[1][0] and end_turn_pos[0][1] < y < end_turn_pos[1][1]:
-                            move = (move + 1) % 4
-                            m.move = (m.move + 1) % 4
+                            move = (move + 1) % goverments_num
+                            m.move = (m.move + 1) % goverments_num
                             m.borders = []
                             m.selected = False
+                            m.where_click = ()
                             for i in range(len(m.goverments_money[move])):
                                 m.goverments_money[move][i] += m.goverments_earnings[move][i]
+                            for i in range(y_size):
+                                for j in range(x_size):
+                                    if m.map[i][j].goverment == m.move + 1 and m.map[i][j].entity is not None:
+                                        if 10 < m.map[i][j].entity < 15:
+                                            m.map[i][j].can_move = 1
                         elif charact_shop[0][0] < x < charact_shop[1][0] and charact_shop[0][1] < y < charact_shop[1][
                             1]:
+                            m.selected = True
                             if m.buy_character is None:
                                 m.buy_character = 0
                             else:
@@ -170,7 +177,7 @@ if __name__ == '__main__':
                             for i in range(m.y):
                                 for j in range(m.x):
                                     m.map[i][j].checked = 0
-                            m.borders = m.move_borders(m.where_click[0], m.where_click[1])
+                            m.borders = m.stroke_borders(m.where_click[0], m.where_click[1])
                             """Покупка персонажа"""
                             pass
                         elif build_shop[0][0] < x < build_shop[1][0] and build_shop[0][1] < y < build_shop[1][1]:

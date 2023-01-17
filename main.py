@@ -46,7 +46,7 @@ def render(step_xx, step_y):
             f = False
             if a == ground:
                 cell = load_image('colors\ground2.png', colorkey=(255, 255, 255))
-                b = m.map[y][x].goverment
+                b = m.map[y][x].government
                 if b is not None:
                     cell = load_image(f'colors\{dict_colors[b]}.png', colorkey=(255, 255, 255))
                 c = m.map[y][x].entity
@@ -72,11 +72,11 @@ def render(step_xx, step_y):
     if m.selected:
         screen.blit(load_image('hud_elems\coin.png', colorkey=(255, 255, 255)), (15, 15))
         font = pygame.font.Font(None, 60)
-        mon = m.goverments_money[move][0]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
+        mon = m.governments_money[move][0]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
         text = font.render(str(mon), True, (255, 255, 255))
         screen.blit(text, (110, 45))
 
-        earning = m.goverments_earnings[move][0]  # Пока что выводятся доходы нулевой провинции нулевого гос-ва
+        earning = m.governments_earnings[move][0]  # Пока что выводятся доходы нулевой провинции нулевого гос-ва
         text = font.render(f'+{earning}' if earning > 0 else str(earning), True, (255, 255, 255))
         screen.blit(text, (width // 2, 45))
 
@@ -122,8 +122,8 @@ if __name__ == '__main__':
     step_x = 0
     step_y = 30
 
-    goverments_num = 2
-    m = Map(x_size, y_size, goverments_num)
+    governments_num = 2
+    m = Map(x_size, y_size, governments_num)
     move = 0
 
     pygame.init()
@@ -150,7 +150,7 @@ if __name__ == '__main__':
     # None - если нет покупок, 0-2 - если покупаются сооружения
     render(step_x, step_y)
 
-    m.goverments_money[0][0] += m.goverments_earnings[0][0]
+    m.governments_money[0][0] += m.governments_earnings[0][0]
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -169,16 +169,19 @@ if __name__ == '__main__':
                     x, y = event.pos
                     if m.selected:
                         if end_turn_pos[0][0] < x < end_turn_pos[1][0] and end_turn_pos[0][1] < y < end_turn_pos[1][1]:
-                            move = (move + 1) % goverments_num
-                            m.move = (m.move + 1) % goverments_num
+                            move = (move + 1) % governments_num
+                            m.move = (m.move + 1) % governments_num
                             m.borders = []
                             m.selected = False
                             m.where_click = ()
-                            for i in range(len(m.goverments_money[move])):
-                                m.goverments_money[move][i] += m.goverments_earnings[move][i]
+                            for i in range(len(m.governments_money[move])):
+                                m.governments_money[move][i] += m.governments_earnings[move][i]
+                            for i in range(x_size):
+                                for j in range(y_size):
+                                    pass
                             for i in range(y_size):
                                 for j in range(x_size):
-                                    if m.map[i][j].goverment == m.move + 1 and m.map[i][j].entity is not None:
+                                    if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
                                         if 10 < m.map[i][j].entity < 15:
                                             m.map[i][j].can_move = 1
                         elif charact_shop[0][0] < x < charact_shop[1][0] and charact_shop[0][1] < y < charact_shop[1][
@@ -200,7 +203,7 @@ if __name__ == '__main__':
                                 m.buy_building = 0
                             else:
                                 m.buy_building = (m.buy_building + 1) % 3
-                            m.borders = m.goverment_borders(m.where_click[0], m.where_click[1])
+                            m.borders = m.government_borders(m.where_click[0], m.where_click[1])
                         elif undo_pos[0][0] < x < undo_pos[1][0] and undo_pos[0][1] < y < undo_pos[1][1]:
                             """Возврат хода назад"""
                             pass

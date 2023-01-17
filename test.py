@@ -40,3 +40,8 @@
 #         diff_y = j[1] - i[1]
 #         for k in self.do_borders(i[0], i[1], diff_x, diff_y):
 #             sp.append(k)
+
+
+
+
+

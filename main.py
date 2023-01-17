@@ -22,9 +22,9 @@ fish = 4
 
 castle = 5
 farm = 6
-big_farm = 7
-tower = 8
-big_tower = 9
+tower = 7
+big_tower = 8
+big_farm = 9
 town = 10
 
 villager = 11
@@ -32,8 +32,8 @@ man1 = 12
 knight = 13
 big_knight = 14
 
-dict_entity = {1: 'tree', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'farm', 7: 'big_farm', 8: 'tower',
-               9: 'big_tower', 10: 'town', 11: 'villager', 12: 'man1', 13: 'knight', 14: 'big_knight'}
+dict_entity = {1: 'tree', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'farm', 7: 'tower', 8: 'big_tower',
+               9: 'big_farm', 10: 'town', 11: 'villager', 12: 'man1', 13: 'knight', 14: 'big_knight'}
 
 
 def render(step_xx, step_y):
@@ -52,7 +52,7 @@ def render(step_xx, step_y):
                 c = m.map[y][x].entity
                 if c is not None:
                     f = True
-                    cell2 = load_image(f'entities\{dict_entity[c]}.png', colorkey=(255, 255, 255))
+                    cell2 = load_image(f'entities\{dict_entity[c]}.png', colorkey=(0, 0, 0))
             elif a == water:
                 cell = load_image('colors\water.png', colorkey=(255, 255, 255))
             # y & 1 == 0 - быстрая проверка на чётность
@@ -60,9 +60,15 @@ def render(step_xx, step_y):
             if f:
                 screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0) - step_y))
         step_x += 31
-    for i in m.borders:
-        pygame.draw.line(screen, (255, 255, 255), (i[0][0] + step_xx, i[0][1] - step_y),
-                         (i[1][0] + step_xx, i[1][1] - step_y), width=2)
+    if m.buy_character is None and m.buy_building is None and type(m.selected) == bool:
+        for i in m.borders:
+            pygame.draw.line(screen, (255, 255, 255), (i[0][0] + step_xx, i[0][1] - step_y),
+                             (i[1][0] + step_xx, i[1][1] - step_y), width=2)
+    else:
+        for i in m.borders:
+            pygame.draw.line(screen, (91, 217, 227), (i[0][0] + step_xx, i[0][1] - step_y),
+                             (i[1][0] + step_xx, i[1][1] - step_y), width=2)
+
     if m.selected:
         screen.blit(load_image('hud_elems\coin.png', colorkey=(255, 255, 255)), (15, 15))
         font = pygame.font.Font(None, 60)
@@ -74,7 +80,7 @@ def render(step_xx, step_y):
         text = font.render(f'+{earning}' if earning > 0 else str(earning), True, (255, 255, 255))
         screen.blit(text, (width // 2, 45))
 
-        screen.blit(load_image('hud_elems\end_turn.png', colorkey=(136, 0, 21)), (width - 250, height - 100))
+        screen.blit(load_image('hud_elems\end_turn.png', colorkey=(0, 0, 0)), (width - 250, height - 100))
         im = load_image('hud_elems\man0.png', colorkey=(255, 255, 255))
         im = pygame.transform.scale(im, (100, 120))
         screen.blit(im, (width - 500, height - 130))
@@ -85,6 +91,11 @@ def render(step_xx, step_y):
             buy = load_image(f'hud_elems\man{m.buy_character}.png', colorkey=(255, 255, 255))
             screen.blit(buy, (width * 0.38, height - 200))
             text = font.render(f'${m.buy_character * 10 + 10}', True, (255, 255, 255))
+            screen.blit(text, (width * 0.4, height - 60))
+        elif m.buy_building is not None:
+            buy = load_image(f'hud_elems\{dict_entity[m.buy_building + 6]}.png', colorkey=(255, 255, 255))
+            screen.blit(buy, (width * 0.38, height - 200))
+            text = font.render(f'${m.buy_building * 5 + 15}', True, (255, 255, 255))
             screen.blit(text, (width * 0.4, height - 60))
 
 
@@ -151,6 +162,9 @@ if __name__ == '__main__':
                 step_x = max(-width // 5 * 4, min(temp_x - start_x, width // 5 * 4))
                 step_y = max(-height // 2, min(start_y - temp_y, height // 2))
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                for i in range(m.y):
+                    for j in range(m.x):
+                        m.map[i][j].checked = 0
                 if event.button == 1:
                     x, y = event.pos
                     if m.selected:
@@ -169,6 +183,7 @@ if __name__ == '__main__':
                                             m.map[i][j].can_move = 1
                         elif charact_shop[0][0] < x < charact_shop[1][0] and charact_shop[0][1] < y < charact_shop[1][
                             1]:
+                            """Покупка персонажа"""
                             m.selected = True
                             if m.buy_character is None:
                                 m.buy_character = 0
@@ -178,19 +193,24 @@ if __name__ == '__main__':
                                 for j in range(m.x):
                                     m.map[i][j].checked = 0
                             m.borders = m.stroke_borders(m.where_click[0], m.where_click[1])
-                            """Покупка персонажа"""
-                            pass
                         elif build_shop[0][0] < x < build_shop[1][0] and build_shop[0][1] < y < build_shop[1][1]:
                             """Покупка сооружений"""
-                            pass
+                            m.selected = True
+                            if m.buy_building is None:
+                                m.buy_building = 0
+                            else:
+                                m.buy_building = (m.buy_building + 1) % 3
+                            m.borders = m.goverment_borders(m.where_click[0], m.where_click[1])
                         elif undo_pos[0][0] < x < undo_pos[1][0] and undo_pos[0][1] < y < undo_pos[1][1]:
                             """Возврат хода назад"""
                             pass
                         else:
                             m.click_processing(m.get_coords((x, y), step_x, step_y))
                             m.buy_character = None
+                            m.buy_building = None
                     else:
                         m.buy_character = None
+                        m.buy_building = None
                         m.click_processing(m.get_coords((x, y), step_x, step_y))
                 elif event.button == 3:
                     start_x, start_y = event.pos[0] - step_x, event.pos[1] + step_y

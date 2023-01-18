@@ -306,6 +306,7 @@ class Map:
             self.governments_money[-1][0] -= self.governments_earnings[-1][0]
             c += 1
 
+    # Проверка соседей с определённым типом
     def check_neighbours(self, type: int, i: int, j: int) -> (int, list):
         neighbours = 0
         pos = []
@@ -337,6 +338,7 @@ class Map:
             pos.append((i, j - 1))
         return (neighbours, pos)
 
+    # Получение координат шестиугольника из координат клика
     def get_coords(self, pos: tuple, step_x, step_y) -> tuple:
         x, y = pos
         x -= step_x
@@ -356,6 +358,7 @@ class Map:
 
         return (q, r)
 
+    # Обработка клика
     def click_processing(self, coords: tuple):  # на вход клетка НЕ в пикселях
         self.borders = []
         x, y = coords
@@ -636,6 +639,7 @@ class Map:
                 size += 1
                 self.dfs_2(i[0], i[1], size)
 
+    # Рисование границ государства из клетки
     def government_borders(self, x: int, y: int) -> list:
         sp = []
         self.map[x][y].checked = 1
@@ -658,6 +662,7 @@ class Map:
                         sp.append(j)
         return sp
 
+    # Рисование границ хода из клетки
     def stroke_borders(self, x: int, y: int) -> list:
         if self.map[x][y].checked == 0:
             self.map[x][y].checked = 1

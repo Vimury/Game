@@ -289,9 +289,8 @@ def start_menu():
                     values = file.read().split("\n")
                 h = values[0]
                 m = values[1]
-                s = values[2]
                 font = pygame.font.SysFont('arial', 50)
-                text = font.render(f'Время: {h} часов, {m} минут, {s} секунд', True, (255, 255, 255))
+                text = font.render(f'Время: {h} ч {m} мин', True, (255, 255, 255))
                 screen.blit(text, (50, 100))
                 pygame.display.flip()
 

@@ -34,7 +34,7 @@ from random import randint, choices
 
 
 class Map:
-    def __init__(self, x, y, governments_num):
+    def __init__(self, x, y, governments_num, training=False):
         self.x: int = x
         self.y: int = y
         # Размер поля в шестиугольниках
@@ -65,17 +65,85 @@ class Map:
                 row.append((step_x + 22, (j * 36 + (18 if i & 1 else 0)) + 24))
             step_x += 31
             self.centres.append(row)
-        self.gr = 0
-        # Количество земли на карте
-        self.map: List[List[Cell]] = self.pre_generate()
-        self.after_generate()
-        max_gr = (self.x - 4) * (self.y - 4) * 3 // 4  # Максимальное количество клеток земли на карте
-        min_gr = (self.x - 4) * (self.y - 4) // 4  # Минимальное количество клеток земли на карте
-        while self.gr > max_gr or self.gr < min_gr:
+        if not training:
             self.gr = 0
-            self.map = self.pre_generate()
+            # Количество земли на карте
+            self.map: List[List[Cell]] = self.pre_generate()
             self.after_generate()
-        self.generate_governments()
+            max_gr = (self.x - 4) * (self.y - 4) * 3 // 4  # Максимальное количество клеток земли на карте
+            min_gr = (self.x - 4) * (self.y - 4) // 4  # Минимальное количество клеток земли на карте
+            while self.gr > max_gr or self.gr < min_gr:
+                self.gr = 0
+                self.map = self.pre_generate()
+                self.after_generate()
+            self.generate_governments()
+        else:
+            self.map: List[List[Cell]] = self.pre_generate()
+            self.gr = 0
+
+            self.after_generate()
+            for i in range(self.y):
+                for j in range(self.x):
+                    self.map[i][j].type = water
+                    self.map[i][j].entity = None
+
+            # Создаю красных
+            self.map[2][2].type = ground
+            self.map[2][2].capital = (2, 2)
+            self.map[2][2].entity = castle
+            self.map[2][2].government = red
+            self.map[2][2].government_size = 1
+            self.map[2][2].province = 0
+            self.governments_money.append([100])
+            self.governments_earnings.append([1])
+            x, y = 2, 2
+
+            for i in [(2, 3), (2, 4), (3, 2), (3, 3), (4, 3), (5, 3), (5, 4), (6, 4), (5, 2), (6, 3), (4, 2), (3, 1),
+                      (7, 4), (7, 3), (7, 2), (8, 3), (8, 4)]:
+                self.map[i[0]][i[1]].type = ground
+                self.map[i[0]][i[1]].government = red
+                self.map[i[0]][i[1]].capital = i
+            self.map[6][4].entity = villager
+            self.map[6][4].can_move = 1
+            self.map[2][3].entity = tree
+
+            for j in self.check_neighbours(ground, x, y)[1]:
+                if self.map[j[0]][j[1]].government == self.map[x][y].government and not self.map[j[0]][j[1]].checked:
+                    self.map[j[0]][j[1]].government_size = 1
+                    # Пересчитать деньги БЫСТРО БЛ
+                    self.map[j[0]][j[1]].province = len(
+                        self.governments_earnings[self.map[j[0]][j[1]].government - 1]) - 1
+                    self.dfs_2(x, y)
+            self.checked_to_zero()
+
+            # Создаю розовых
+            self.map[7][8].type = ground
+            self.map[7][8].capital = (7, 8)
+            self.map[7][8].entity = castle
+            self.map[7][8].government = pink
+            self.map[7][8].government_size = 1
+            self.map[7][8].province = 0
+            self.governments_money.append([100])
+            self.governments_earnings.append([1])
+            for i in [(8, 8), (8, 7), (8, 6), (8, 5), (7, 7), (7, 6), (7, 5), (6, 8), (6, 9), (5, 7), (5, 8),
+                      (9, 4), (9, 5), (9, 6), (9, 7)]:
+                self.map[i[0]][i[1]].type = ground
+                self.map[i[0]][i[1]].government = pink
+                self.map[i[0]][i[1]].capital = i
+
+            self.map[8][6].entity = villager
+            self.defend_level_up(8, 6)
+
+            x, y = 7, 8
+            for j in self.check_neighbours(ground, x, y)[1]:
+                if self.map[j[0]][j[1]].government == self.map[x][y].government and not self.map[j[0]][j[1]].checked:
+                    self.map[j[0]][j[1]].government_size = 1
+                    # Пересчитать деньги БЫСТРО БЛ
+                    self.map[j[0]][j[1]].province = len(self.governments_earnings[pink - 1]) - 1
+                    self.governments_earnings[pink - 1].append(1)
+                    self.dfs_2(x, y)
+            self.checked_to_zero()
+
         # for i in range(self.y):
         #     for j in range(self.x):
         #         self.map[i][j].type = water
@@ -88,11 +156,12 @@ class Map:
         # self.map[2][2].entity = castle
         # self.map[3][3].type = ground
 
-        for i in range(x):
-            for j in range(y):
-                print(self.map[j][i].type, end=' ')
-            print()
-        print()
+        # for i in range(x):
+        #     for j in range(y):
+        #         print(self.map[j][i].type, end=' ')
+        #     print()
+        # print()
+
         # for i in range(x):
         #     for j in range(y):
         #         print(self.map[j][i].entity, end=' ')
@@ -243,21 +312,21 @@ class Map:
         a = i & 1
         # Сосед справа сверху
         # Спасибо Кузнецову Тимуру за консультацию
-        if i + 1 < self.y and j - 1 + (i & 1) >= 0 and self.map[i + 1][j - 1 + (i & 1)].type == type:
+        if i + 1 < self.y and j - 1 + a >= 0 and self.map[i + 1][j - 1 + a].type == type:
             neighbours += 1
-            pos.append((i + 1, j - 1 + (i & 1)))
+            pos.append((i + 1, j - 1 + a))
         # Сосед справа снизу
-        if i + 1 < self.y and j + (i & 1) < self.x and self.map[i + 1][j + (i & 1)].type == type:
+        if i + 1 < self.y and j + a < self.x and self.map[i + 1][j + a].type == type:
             neighbours += 1
-            pos.append((i + 1, j + (i & 1)))
+            pos.append((i + 1, j + a))
         # Сосед слева сверху
-        if i - 1 >= 0 and j - 1 >= 0 and self.map[i - 1][j - 1 + (i & 1)].type == type:
+        if i - 1 >= 0 and j - 1 >= 0 and self.map[i - 1][j - 1 + a].type == type:
             neighbours += 1
-            pos.append((i - 1, j - 1 + (i & 1)))
+            pos.append((i - 1, j - 1 + a))
         # Сосед слева снизу
-        if i - 1 >= 0 and j + (i & 1) and self.map[i - 1][j + (i & 1)].type == type:
+        if i - 1 >= 0 and j + a and self.map[i - 1][j + a].type == type:
             neighbours += 1
-            pos.append((i - 1, j + (i & 1)))
+            pos.append((i - 1, j + a))
         # Сосед снизу
         if j + 1 < self.x and self.map[i][j + 1].type == type:
             neighbours += 1
@@ -282,6 +351,9 @@ class Map:
                     q, r = i, j
         print(q, r)
         print(self.map[q][r].defend_level, "- defend")
+        # print(self.map[q][r].capital, "- capital")
+        # print(self.governments_earnings, "- g_e")
+
         return (q, r)
 
     def click_processing(self, coords: tuple):  # на вход клетка НЕ в пикселях
@@ -321,7 +393,7 @@ class Map:
 
                         t = self.check_neighbours(ground, x, y)[1]
                         for i in t:
-                            print("Атакую жёстко попускаю на 323 строчке")
+                            print("Атакую жёстко попускаю на 359 строчке")
                             self.checked_to_zero()
                             if self.dfs((x, y)):
                                 self.checked_to_zero()
@@ -334,9 +406,10 @@ class Map:
                                             self.map[j[0]][j[1]].capital = j
                                             self.map[j[0]][j[1]].government_size = 1
                                             self.map[j[0]][j[1]].entity = castle
-                                            self.governments_money[self.map[j[0]][j[1]].government - 1].append([self.governments_money[self.move][
-                                                                                          self.map[x][
-                                                                                              y].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
+                                            self.governments_money[self.map[j[0]][j[1]].government - 1].append(
+                                                [self.governments_money[self.move][
+                                                     self.map[x][
+                                                         y].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
                                             self.map[j[0]][j[1]].province = len(
                                                 self.governments_earnings[self.map[j[0]][j[1]].government - 1]) - 1
                                             self.governments_earnings.append([1])
@@ -467,7 +540,7 @@ class Map:
                             self.selected = True
                 elif self.map[x][y].government is not None:
                     """Атака на другое гос-во"""
-                    print("Атакую жёстко попускаю на 462 строчке")
+                    print("Атакую жёстко попускаю на 506 строчке")
                     if self.buy_character is not None and self.governments_money[self.move][0] >= (
                             self.buy_character * 10) + 10:
                         t = self.check_neighbours(ground, x, y)[1]
@@ -486,19 +559,14 @@ class Map:
                                                 self.map[j[0]][j[1]].capital = j
                                                 self.map[j[0]][j[1]].government_size = 1
                                                 self.map[j[0]][j[1]].entity = castle
-                                                self.governments_money[self.map[j[0]][j[1]].government - 1].append([self.governments_money[
-                                                                                              self.move][self.map[j[0]][
-                                                    j[1]].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
+                                                self.governments_money[self.map[j[0]][j[1]].government - 1].append(
+                                                    [self.governments_money[
+                                                         self.move][self.map[j[0]][
+                                                        j[1]].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
                                                 self.map[j[0]][j[1]].province = len(
                                                     self.governments_earnings[self.map[j[0]][j[1]].government - 1]) - 1
                                                 self.governments_earnings.append([1])
                                                 self.dfs_2(j[0], j[1])
-                                                if self.map[j[0]][j[1]].government_size == 1:
-                                                    self.map[j[0]][j[1]].entity = None
-                                                    del self.governments_money[self.map[j[0]][j[1]].government - 1][
-                                                        self.map[j[0]][j[1]].province]
-                                                    del self.governments_earnings[self.map[j[0]][j[1]].government - 1][
-                                                        self.map[j[0]][j[1]].province]
                                             else:
                                                 f = True
                                                 self.map[j[0]][j[1]].capital = j
@@ -509,12 +577,7 @@ class Map:
                                                 self.governments_earnings[self.map[j[0]][j[1]].government - 1][
                                                     self.map[j[0]][j[1]].province] = 1
                                                 self.dfs_2(j[0], j[1])
-                                                if self.map[j[0]][j[1]].government_size == 1:
-                                                    self.map[j[0]][j[1]].entity = None
-                                                    del self.governments_money[self.map[j[0]][j[1]].government - 1][
-                                                        self.map[j[0]][j[1]].province]
-                                                    del self.governments_earnings[self.map[j[0]][j[1]].government - 1][
-                                                        self.map[j[0]][j[1]].province]
+
                                 a = self.get_capital(i[0], i[1])
                                 self.map[x][y].government = self.move + 1
                                 self.map[x][y].capital = (x, y)
@@ -567,8 +630,8 @@ class Map:
             if self.map[i[0]][i[1]].checked == 0 and self.map[i[0]][i[1]].government == self.map[x][y].government:
                 self.map[i[0]][i[1]].government_size = 1
                 self.map[i[0]][i[1]].capital = i
-                self.map[i[0]][i[1]].province = len(self.governments_earnings[self.move])
-                self.governments_earnings[self.move].append(1)
+                self.map[i[0]][i[1]].province = len(self.governments_earnings[self.map[x][y].government - 1])
+                self.governments_earnings[self.map[x][y].government - 1].append(1)
                 self.unite_governments(x, y, i[0], i[1])
                 size += 1
                 self.dfs_2(i[0], i[1], size)
@@ -782,7 +845,6 @@ class Map:
         if (u != v):
             if self.map[u[0]][u[1]].government_size >= self.map[v[0]][v[1]].government_size:
                 self.map[u[0]][u[1]].government_size += self.map[v[0]][v[1]].government_size
-                print(self.governments_earnings, self.map[v[0]][v[1]].province, self.map[v[0]][v[1]].government - 1)
                 self.governments_earnings[self.map[u[0]][u[1]].government - 1][self.map[u[0]][u[1]].province] += \
                     self.governments_earnings[self.map[v[0]][v[1]].government - 1][self.map[v[0]][v[1]].province]
                 del self.governments_earnings[self.map[v[0]][v[1]].government - 1][self.map[v[0]][v[1]].province]
@@ -852,7 +914,6 @@ class Map:
             if not self.map[i[0]][i[1]].checked and self.map[i[0]][i[1]].government == self.map[x][y].government:
                 self.dfs(i, v)
                 children += 1
-        print(children, x, y)
         if children > 1 and p == (-1, -1):
             return True
         return False

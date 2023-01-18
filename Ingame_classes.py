@@ -291,7 +291,7 @@ class Map:
             self.map[k[0]][k[1]].capital = (k[0], k[1])
             self.map[k[0]][k[1]].government_size = 1
             self.map[k[0]][k[1]].entity = castle
-            self.governments_money.append([1000])
+            self.governments_money.append([10])
             self.governments_earnings.append([1])
             for t in sp:
                 self.map[t[0]][t[1]].government = c

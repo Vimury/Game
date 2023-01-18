@@ -1,4 +1,4 @@
-from Classes import Map, Cell
+from Ingame_classes import Map, Cell
 import pygame
 import os
 import sys
@@ -85,7 +85,7 @@ def render(step_xx, step_y):
         # image = pygame.transform.scale(image, (100, 120))
         screen.blit(image, (width - 500, height - 140))
         screen.blit(load_image('hud_elems\house.png', colorkey=(255, 255, 255)), (width - 750, height - 140))
-        screen.blit(load_image('hud_elems\\undo.png', colorkey=(255, 255, 255)), (width - 1000, height - 100))
+        # screen.blit(load_image('hud_elems\\undo.png', colorkey=(255, 255, 255)), (width - 1000, height - 100))
 
         if m.buy_character is not None:
             buy = load_image(f'hud_elems\man{m.buy_character}.png', colorkey=(255, 255, 255))
@@ -237,11 +237,12 @@ class Explanation(pygame.sprite.Sprite):
         self.texts1 = ["Атакуй своими юнитами,", "Чем больше земель,",
                        "Строй башни, чтобы защитить", "Юниты тоже защищают",
                        "Юниты тратят деньги.", "Если деньги кончатся,",
-                       "Деревья уменьшают доход,", "Для победы нужно не оставить", "Обучение окончено.",
+                       "Деревья уменьшают доход,", "Для победы нужно не оставить", "Завершить ход можно",
+                       "Обучение окончено.",
                        "Соединяй юнитов, чтобы получить более сильных"]
         self.texts2 = ["чтобы захватить земли", "тем больше прибыль", "соседние клетки", "соседние клетки",
                        "Сильные едят больше", "то юниты умрут", "поэтому их надо рубить", "ни одной клетки противника",
-                       "ЛКМ чтобы выйти"]
+                       "нажав на кнопку справа внизу", "ЛКМ чтобы выйти"]
 
     def update(self, *args, stage=False):
         global exp_text1, exp_text2, is_tip
@@ -289,13 +290,13 @@ def start_menu():
                     values = file.read().split("\n")
                 h = values[0]
                 m = values[1]
+                wins = values[3]
                 font = pygame.font.SysFont('arial', 50)
                 text = font.render(f'Время: {h} ч {m} мин', True, (255, 255, 255))
                 screen.blit(text, (50, 100))
+                text = font.render(f'Победы: {wins}', True, (255, 255, 255))
+                screen.blit(text, (50, 160))
                 pygame.display.flip()
-
-
-
 
 
 if __name__ == '__main__':
@@ -375,8 +376,20 @@ if __name__ == '__main__':
                         if m.selected:
                             if end_turn_pos[0][0] < x < end_turn_pos[1][0] and end_turn_pos[0][1] < y < end_turn_pos[1][
                                 1]:
-                                move = (move + 1) % m.governments_num
-                                m.move = (m.move + 1) % m.governments_num
+                                f = True
+                                countries = []
+                                while f:
+                                    move = (move + 1) % m.governments_num
+                                    m.move = (m.move + 1) % m.governments_num
+
+                                    for i in range(y_size):
+                                        for j in range(x_size):
+                                            if m.map[x][y].government == m.move - 1:
+                                                f = False
+                                                if m.map[x][y].government not in countries:
+                                                    countries.append(m.map[x][y].government)
+
+
                                 m.borders = []
                                 m.selected = False
                                 m.where_click = ()
@@ -505,6 +518,8 @@ if __name__ == '__main__':
                         elif exp.stage == 8:
                             exp.update(event, stage=True)
                         elif exp.stage == 9:
+                            exp.update(event, stage=True)
+                        elif exp.stage == 10:
                             start_window = True
                             training = False
                             step_y = 30

@@ -60,6 +60,7 @@ class Map:
         self.centres = np.array([np.array([[0, 0] for j in range(self.x)]) for i in range(self.y)])
         # centres[i][j] - расположение центра [i][j] шестиугольника(в пикселях)
         self.update = True
+        self.logs = []
         step_x = 0
         for i in range(self.y):
             for j in range(self.x):
@@ -290,7 +291,7 @@ class Map:
                     q, r = i, j
         print(q, r)
         # print(self.map[q][r].defend_level, "- defend")
-        # print(self.map[q][r].capital, "- capital")
+        print(self.map[q][r].capital, "- capital")
         # print(self.governments_earnings, "- g_e")
 
         return (q, r)
@@ -307,6 +308,7 @@ class Map:
                 if self.map[x][y].government is not None and self.map[x][y].government == self.move + 1:
                     if self.map[x][y].entity is not None and 10 < self.map[x][y].entity < 15:
                         if self.buy_unit is None:
+                            """Выбираю персонажа или провинцию"""
                             if self.map[x][y].can_move:
                                 if not self.selected:
                                     self.selected = True
@@ -322,10 +324,12 @@ class Map:
                         else:
                             self.governments_earnings[self.move][self.map[x][y].province] += dict_units_earnings[
                                 self.map[x][y].entity]
-                            if self.map[x][y].entity + self.buy_unit + 1 < 15:
+                            if self.map[x][y].entity + self.buy_unit + 1 < 15 and self.governments_money[self.move][
+                                0] - (self.buy_unit * 10) + 10 >= 0:
                                 self.map[x][y].entity += self.buy_unit + 1
                                 self.defend_level_up(x, y)
                                 self.governments_money[self.move][0] -= (self.buy_unit * 10) + 10
+
                             self.governments_earnings[self.move][self.map[x][y].province] -= \
                                 dict_units_earnings[self.map[x][y].entity]
                             self.borders = self.government_borders(x, y)
@@ -334,11 +338,11 @@ class Map:
                             self.buy_unit * 10) + 10:
                         f = True
                         if self.map[x][y].government == self.move + 1:
+                            """Проверка на здание"""
                             if self.map[x][y].entity is not None and 4 < self.map[x][y].entity < 11:
                                 f = False
                         if f:
-                            if self.map[x][y].government == self.map[self.where_click[0]][
-                                self.where_click[1]].government:
+                            if self.map[x][y].capital == self.map[self.where_click[0]][self.where_click[1]].capital:
                                 if self.map[x][y].entity == tree:
                                     self.governments_earnings[self.move][
                                         self.map[self.where_click[0]][self.where_click[1]].province] += 1
@@ -491,6 +495,8 @@ class Map:
                 self.update = True
             self.selected = False
 
+    def update_logs(self, what, where, prov=False):
+        pass
     def do_turn_bot(self, color):
         for i in range(self.y):
             for j in range(self.x):
@@ -921,6 +927,8 @@ class Training(Map):
         # Надо для обхода в ширину
         self.buy_unit: Optional[int] = None
         self.buy_building: Optional[int] = None
+        self.update = True
+        self.logs = []
         step_x = 0
         for i in range(self.y):
             row = []
@@ -928,7 +936,7 @@ class Training(Map):
                 row.append((step_x + 22, (j * 36 + (18 if i & 1 else 0)) + 24))
             step_x += 31
             self.centres.append(row)
-        self.map: List[List[Cell]] = self.pre_generate()
+        self.pre_generate()
 
         for i in range(self.y):
             for j in range(self.x):

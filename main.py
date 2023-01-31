@@ -33,8 +33,12 @@ man1 = 12
 knight = 13
 big_knight = 14
 
-dict_entity = {1: 'tree1', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle', 6: 'farm', 7: 'tower', 8: 'big_tower',
-               9: 'big_farm', 10: 'town', 11: 'villager', 12: 'man1', 13: 'knight', 14: 'big_knight'}
+grave = 15
+
+dict_entity = {1: 'tree1', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle1', 6: 'farm', 7: 'tower', 8: 'big_tower',
+               9: 'big_farm', 10: 'town', 11: 'villager1', 12: 'man1', 13: 'knight', 14: 'big_knight', 15: 'grave'}
+
+dict_units_earnings = {villager: 2, man1: 5, knight: 10, big_knight: 15}
 
 
 def render(step_xx, step_y):
@@ -47,21 +51,28 @@ def render(step_xx, step_y):
             for x in range(x_size):
                 a = m.map[y][x].type
                 f = False
+                f2 = False
                 if a == ground:
-                    cell = load_image('colors\ground3.png', colorkey=(255, 255, 255))
+                    cell = load_image('colors\ground3.png')
                     b = m.map[y][x].government
                     if b is not None:
-                        cell = load_image(f'colors\{dict_colors[b]}.png', colorkey=(255, 255, 255))
+                        cell = load_image(f'colors\{dict_colors[b]}.png')
                     c = m.map[y][x].entity
                     if c is not None:
                         f = True
-                        cell2 = load_image(f'entities\{dict_entity[c]}.png', colorkey=(0, 0, 0))
+                        if c == castle and m.move + 1 == b:
+                            f2 = True
+                            cell3 = load_image('entities\exclamation_mark.png')
+
+                        cell2 = load_image(f'entities\{dict_entity[c]}.png')
                 elif a == water:
-                    cell = load_image('colors\water4.png', colorkey=(255, 255, 255))
+                    cell = load_image('colors\water4.png')
                 # y & 1 == 0 - быстрая проверка на чётность
                 screen.blit(cell, (step_x, x * 36 + (18 if y & 1 else 0) - step_y))  # -24
                 if f:
                     screen.blit(cell2, (step_x, x * 36 + (18 if y & 1 else 0) - step_y))
+                if f2:
+                    screen.blit(cell3, (step_x, x * 36 + (18 if y & 1 else 0) - step_y))
             step_x += 31
         if m.borders:
             if m.buy_unit is None and m.buy_building is None and type(m.selected) == bool:
@@ -75,7 +86,7 @@ def render(step_xx, step_y):
                 m.borders = []
 
         if m.selected:
-            screen.blit(load_image('hud_elems\coin.png', colorkey=(255, 255, 255)), (15, 15))
+            screen.blit(load_image('hud_elems\coin.png'), (15, 15))
             font = pygame.font.Font(None, 60)
             mon = m.governments_money[m.move][0]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
             text = font.render(str(mon), True, (255, 255, 255))
@@ -85,20 +96,20 @@ def render(step_xx, step_y):
             text = font.render(f'+{earning}' if earning > 0 else str(earning), True, (255, 255, 255))
             screen.blit(text, (width // 2, 45))
 
-            screen.blit(load_image('hud_elems\end_turn.png', colorkey=(0, 0, 0)), (width - 250, height - 100))
-            image = load_image('hud_elems\man0.png', colorkey=(255, 255, 255))
+            screen.blit(load_image('hud_elems\end_turn.png'), (width - 250, height - 100))
+            image = load_image('hud_elems\man0.png')
             # image = pygame.transform.scale(image, (100, 120))
-            screen.blit(image, (width - 500, height - 140))
-            screen.blit(load_image('hud_elems\house.png', colorkey=(255, 255, 255)), (width - 750, height - 140))
-            # screen.blit(load_image('hud_elems\\undo.png', colorkey=(255, 255, 255)), (width - 1000, height - 100))
+            screen.blit(image, (width - 500, height - 160))
+            screen.blit(load_image('hud_elems\house.png'), (width - 750, height - 140))
+            screen.blit(load_image('hud_elems\\undo.png'), (width - 1000, height - 100))
 
             if m.buy_unit is not None:
-                buy = load_image(f'hud_elems\man{m.buy_unit}.png', colorkey=(255, 255, 255))
-                screen.blit(buy, (width * 0.38, height - 200))
+                buy = load_image(f'hud_elems\man{m.buy_unit}.png')
+                screen.blit(buy, (width * 0.35, height - 210))
                 text = font.render(f'${m.buy_unit * 10 + 10}', True, (255, 255, 255))
                 screen.blit(text, (width * 0.4, height - 60))
             elif m.buy_building is not None:
-                buy = load_image(f'hud_elems\{dict_entity[m.buy_building + 6]}.png', colorkey=(255, 255, 255))
+                buy = load_image(f'hud_elems\{dict_entity[m.buy_building + 6]}.png')
                 screen.blit(buy, (width * 0.38, height - 200))
                 text = font.render(f'${m.buy_building * 5 + 15}', True, (255, 255, 255))
                 screen.blit(text, (width * 0.4, height - 60))
@@ -231,6 +242,8 @@ class Tip(pygame.sprite.Sprite):
         tip_text = font.render(self.texts[self.stage], True, (0, 0, 0))
         # print(self.stage, "- tip")
 
+        m.update = True
+
 
 class Explanation(pygame.sprite.Sprite):
     image = load_image("explonation.png", (255, 255, 255))
@@ -269,6 +282,7 @@ class Explanation(pygame.sprite.Sprite):
             exp_text2 = font.render(self.texts2[self.stage], True, (0, 0, 0))
             if stage:
                 self.stage += 1
+        m.update = True
         # print(self.stage, "- exp")
 
 
@@ -279,8 +293,8 @@ def start_menu():
         font = pygame.font.SysFont('arial', 95)
         title = font.render('Countries of century knights', True, (255, 255, 255))
         screen.blit(load_image("2.jpg"), (0, 0))
-        # screen.blit(load_image('play_button.png', colorkey=(0, 0, 0)), (360, 250))
-        # screen.blit(load_image('shut_down.png', colorkey=(255, 255, 255)), (830, 600))
+        # screen.blit(load_image('play_button.png'), (360, 250))
+        # screen.blit(load_image('shut_down.png'), (830, 600))
         screen.blit(title, (1000 / 2 - title.get_width() / 2, 100 / 2 - title.get_height() / 2))
         start_sprites.draw(screen)
         pygame.display.update()
@@ -312,6 +326,14 @@ def end_menu():
     screen.blit(text, (width // 4, height // 2))
     text = font.render(f'Выйти', True, (255, 255, 255))
     screen.blit(text, (width // 3, height // 2 + 100))
+
+
+def pause_menu():
+    font = pygame.font.SysFont('arial', 50)
+    text = font.render(f"Продолжить", True, (255, 255, 255))
+    screen.blit(text, (width // 3, height // 2.5))
+    text = font.render(f'Выйти в меню', True, (255, 255, 255))
+    screen.blit(text, (width // 3, height // 2.5 + 100))
 
 
 if __name__ == '__main__':
@@ -350,12 +372,13 @@ if __name__ == '__main__':
     is_tip = 2
     is_stat = False
     end_game = False
+    pause = False
 
     water_bg = load_image("water_bg.png")
 
     end_turn_pos = ((width - 250, height - 100), (width - 160, height - 10))
-    unit_shop = ((width - 500, height - 130), (width - 400, height - 10))
-    build_shop = ((width - 750, height - 100), (width - 654, height - 4))
+    unit_shop = ((width - 470, height - 130), (width - 360, height - 10))
+    build_shop = ((width - 750, height - 120), (width - 630, height - 4))
     undo_pos = ((width - 1000, height - 100), (width - 904, height - 4))
 
     fps = 30
@@ -377,28 +400,40 @@ if __name__ == '__main__':
                 running = False
             if start_window:
                 start_sprites.update(event)
+            elif event.type == pygame.KEYDOWN:
+                pause = not pause
+                m.update = True
             elif rmb_pressed and event.type == pygame.MOUSEBUTTONUP:
                 rmb_pressed = False
             elif rmb_pressed and event.type == pygame.MOUSEMOTION:
-                temp_x, temp_y = event.pos
-                step_x = max(-width // 5, min(temp_x - start_x, width // 5))
-                step_y = max(-height // 5, min(start_y - temp_y, height // 5))
+                if not pause:
+                    temp_x, temp_y = event.pos
+                    m.update = True
+                    step_x = max(-width // 5, min(temp_x - start_x, width // 5))
+                    step_y = max(-height // 5, min(start_y - temp_y, height // 5))
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    for i in range(m.y):
-                        for j in range(m.x):
-                            m.map[i][j].checked = 0
+                    m.checked_to_zero()
                     if end_game:
                         end_game = False
                         start_window = True
-
                     x, y = event.pos
-                    if not training:
+                    if pause:
+                        if width // 3 < x < width // 1.7 and height // 2.4 < y < height // 2.1:
+                            # print("Продолжаем")
+                            pause = False
+                            m.update = True
+                        elif width // 3 < x < width // 1.5 and height // 1.9 < y < height // 1.6:
+                            # print("Выход")
+                            start_window = True
+                            pause = False
+                    elif not training:
                         if m.selected:
                             if end_turn_pos[0][0] < x < end_turn_pos[1][0] and end_turn_pos[0][1] < y < end_turn_pos[1][
                                 1]:
                                 # m.move = (m.move + 1) % m.governments_num
                                 countries = []
+                                adds = {}
                                 for i in range(y_size):
                                     for j in range(x_size):
                                         if m.map[i][j].government is not None:
@@ -409,7 +444,6 @@ if __name__ == '__main__':
                                     end_game = True
                                 else:
                                     m.move = (m.move + 1) % m.governments_num
-                                    print("<<<<<<")
                                     while m.move + 1 not in countries:
                                         m.move = (m.move + 1) % m.governments_num
 
@@ -418,15 +452,29 @@ if __name__ == '__main__':
                                 m.where_click = ()
                                 for i in range(len(m.governments_money[m.move])):
                                     m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
-                                for i in range(x_size):
-                                    for j in range(y_size):
-                                        pass
+
                                 for i in range(y_size):
                                     for j in range(x_size):
                                         if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
                                             if 10 < m.map[i][j].entity < 15:
+                                                if m.governments_money[m.map[i][j].government - 1][
+                                                    m.map[i][j].province] < 0:
+                                                    if (m.map[i][j].government - 1,
+                                                        m.map[i][j].province) not in adds:
+                                                        adds[(m.map[i][j].government - 1, m.map[i][j].province)] = \
+                                                            dict_units_earnings[m.map[i][j].entity] - 1
+                                                    else:
+                                                        adds[
+                                                            (m.map[i][j].government - 1, m.map[i][j].province)] += \
+                                                            dict_units_earnings[m.map[i][j].entity] - 1
+                                                    m.map[i][j].entity = grave
+                                                    m.defend_level_down(i, j)
                                                 m.map[i][j].can_move = 1
+                                            elif m.map[i][j].entity == grave:
+                                                m.map[i][j].entity = tree
                                 m.update = True
+                                for i in adds:
+                                    m.governments_earnings[i[0]][i[1]] += adds[i]
                             elif unit_shop[0][0] < x < unit_shop[1][0] and unit_shop[0][1] < y < \
                                     unit_shop[1][1]:
                                 """Покупка персонажа"""
@@ -474,6 +522,7 @@ if __name__ == '__main__':
                             if i == 9 and j == 4:
                                 m.click_processing((i, j))
                                 tip.update(stage=True)
+
                         if exp.stage == 1:  # tip - 2, exp - 1
                             exp.update(event, stage=True)
                         elif exp.stage == 2:  # tip - 2, exp - 2
@@ -560,6 +609,8 @@ if __name__ == '__main__':
                 start_menu()
             elif end_game:
                 end_menu()
+            elif pause:
+                pause_menu()
             else:
                 render(step_x, step_y)
                 if training:

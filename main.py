@@ -88,11 +88,11 @@ def render(step_xx, step_y):
         if m.selected:
             screen.blit(load_image('hud_elems\coin.png'), (15, 15))
             font = pygame.font.Font(None, 60)
-            mon = m.governments_money[m.move][0]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
+            mon = m.governments_money[m.move][m.map[m.where_click[0]][m.where_click[1]].province]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
             text = font.render(str(mon), True, (255, 255, 255))
             screen.blit(text, (110, 45))
 
-            earning = m.governments_earnings[m.move][0]  # Пока что выводятся доходы нулевой провинции нулевого гос-ва
+            earning = m.governments_earnings[m.move][m.map[m.where_click[0]][m.where_click[1]].province]  # Пока что выводятся доходы нулевой провинции нулевого гос-ва
             text = font.render(f'+{earning}' if earning > 0 else str(earning), True, (255, 255, 255))
             screen.blit(text, (width // 2, 45))
 
@@ -433,7 +433,6 @@ if __name__ == '__main__':
                                 1]:
                                 # m.move = (m.move + 1) % m.governments_num
                                 countries = []
-                                adds = {}
                                 for i in range(y_size):
                                     for j in range(x_size):
                                         if m.map[i][j].government is not None:
@@ -451,30 +450,28 @@ if __name__ == '__main__':
                                 m.selected = False
                                 m.where_click = ()
                                 for i in range(len(m.governments_money[m.move])):
+                                    print(m.governments_money[m.move][i], "-gm")
+                                    print(m.governments_earnings[m.move][i], "-ge")
                                     m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
-
                                 for i in range(y_size):
                                     for j in range(x_size):
                                         if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
                                             if 10 < m.map[i][j].entity < 15:
                                                 if m.governments_money[m.map[i][j].government - 1][
                                                     m.map[i][j].province] < 0:
-                                                    if (m.map[i][j].government - 1,
-                                                        m.map[i][j].province) not in adds:
-                                                        adds[(m.map[i][j].government - 1, m.map[i][j].province)] = \
-                                                            dict_units_earnings[m.map[i][j].entity] - 1
-                                                    else:
-                                                        adds[
-                                                            (m.map[i][j].government - 1, m.map[i][j].province)] += \
-                                                            dict_units_earnings[m.map[i][j].entity] - 1
+                                                    m.governments_earnings[m.map[i][j].government - 1][
+                                                        m.map[i][j].province] += dict_units_earnings[
+                                                                                     m.map[i][j].entity] - 1
                                                     m.map[i][j].entity = grave
                                                     m.defend_level_down(i, j)
                                                 m.map[i][j].can_move = 1
                                             elif m.map[i][j].entity == grave:
                                                 m.map[i][j].entity = tree
+                                for i in range(len(m.governments_money)):
+                                    for j in range(len(m.governments_money[i])):
+                                        if m.governments_money[i][j] < 0:
+                                            m.governments_money[i][j] = 0 + m.governments_earnings[i][j]
                                 m.update = True
-                                for i in adds:
-                                    m.governments_earnings[i[0]][i[1]] += adds[i]
                             elif unit_shop[0][0] < x < unit_shop[1][0] and unit_shop[0][1] < y < \
                                     unit_shop[1][1]:
                                 """Покупка персонажа"""
@@ -487,6 +484,7 @@ if __name__ == '__main__':
                                 m.borders = m.stroke_borders(m.where_click[0], m.where_click[1])
                             elif build_shop[0][0] < x < build_shop[1][0] and build_shop[0][1] < y < build_shop[1][1]:
                                 """Покупка сооружений"""
+                                m.buy_unit = None
                                 m.selected = True
                                 if m.buy_building is None:
                                     m.buy_building = 0

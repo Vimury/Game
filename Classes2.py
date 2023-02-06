@@ -29,6 +29,8 @@ man1 = 12
 knight = 13
 big_knight = 14
 
+grave = 15
+
 dict_units_earnings = {villager: 2, man1: 5, knight: 10, big_knight: 15}
 
 from random import randint, choices
@@ -291,8 +293,9 @@ class Map:
                     q, r = i, j
         print(q, r)
         # print(self.map[q][r].defend_level, "- defend")
-        print(self.map[q][r].capital, "- capital")
+        # print(self.map[q][r].capital, "- capital")
         # print(self.governments_earnings, "- g_e")
+        print(self.map[q][r].province, "- province")
 
         return (q, r)
 
@@ -349,7 +352,10 @@ class Map:
                                     self.governments_money[self.move][
                                         self.map[self.where_click[0]][self.where_click[1]].province] += 3
                                     self.map[x][y].can_move = 0
-                                    self.update = True
+                                elif self.map[x][y].entity == grave:
+                                    self.governments_earnings[self.move][
+                                        self.map[self.where_click[0]][self.where_click[1]].province] += 1
+                                    self.map[x][y].can_move = 0
                                 else:
                                     self.map[x][y].can_move = 1
                                 self.map[x][y].entity = self.buy_unit + 11
@@ -413,21 +419,21 @@ class Map:
                                 if self.dfs((x, y)):
                                     self.checked_to_zero()
                                     self.map[x][y].checked = 1
+                                    f = False
                                     for j in self.check_neighbours(ground, x, y)[1]:
-                                        f = False
                                         if self.map[j[0]][j[1]].government == self.map[x][y].government and not \
                                                 self.map[j[0]][j[1]].checked:
                                             if f:
+                                                print("JJJJ")
                                                 self.map[j[0]][j[1]].capital = j
                                                 self.map[j[0]][j[1]].government_size = 1
                                                 self.map[j[0]][j[1]].entity = castle
                                                 self.governments_money[self.map[j[0]][j[1]].government - 1].append(
-                                                    [self.governments_money[
-                                                         self.move][self.map[j[0]][
-                                                        j[1]].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
+                                                    self.governments_money[self.map[j[0]][j[1]].government - 1][
+                                                         self.map[j[0]][j[1]].province] // 3)  # Пересчитать деньги
                                                 self.map[j[0]][j[1]].province = len(
-                                                    self.governments_earnings[self.map[j[0]][j[1]].government - 1]) - 1
-                                                self.governments_earnings.append([1])
+                                                    self.governments_earnings[self.map[j[0]][j[1]].government - 1])
+                                                self.governments_earnings[self.map[j[0]][j[1]].government - 1].append(1)
                                                 self.dfs_2(j[0], j[1])
                                             else:
                                                 f = True
@@ -435,7 +441,7 @@ class Map:
                                                 self.map[j[0]][j[1]].government_size = 1
                                                 self.map[j[0]][j[1]].entity = castle
                                                 self.governments_money[self.map[j[0]][j[1]].government - 1][
-                                                    self.map[j[0]][j[1]].province] //= 3  # Пересчитать деньги БЫСТРО БЛ
+                                                    self.map[j[0]][j[1]].province] //= 3  # Пересчитать деньги
                                                 self.governments_earnings[self.map[j[0]][j[1]].government - 1][
                                                     self.map[j[0]][j[1]].province] = 1
                                                 self.dfs_2(j[0], j[1])
@@ -497,6 +503,7 @@ class Map:
 
     def update_logs(self, what, where, prov=False):
         pass
+
     def do_turn_bot(self, color):
         for i in range(self.y):
             for j in range(self.x):
@@ -511,7 +518,15 @@ class Map:
                 self.map[i[0]][i[1]].government_size = 1
                 self.map[i[0]][i[1]].capital = i
                 self.map[i[0]][i[1]].province = len(self.governments_earnings[self.map[x][y].government - 1])
-                self.governments_earnings[self.map[x][y].government - 1].append(1)
+                if self.map[i[0]][i[1]].entity is not None:
+                    if 10 < self.map[i[0]][i[1]].entity < 15:
+                        self.governments_earnings[self.map[x][y].government - 1].append(1 - dict_units_earnings[self.map[i[0]][i[1]].entity])
+                    elif self.map[i[0]][i[1]].entity == tree:
+                        self.governments_earnings[self.map[x][y].government - 1].append(0)
+                    else:
+                        self.governments_earnings[self.map[x][y].government - 1].append(1)
+                else:
+                    self.governments_earnings[self.map[x][y].government - 1].append(1)
                 self.unite_governments(x, y, i[0], i[1])
                 size += 1
                 self.dfs_2(i[0], i[1], size)
@@ -745,7 +760,7 @@ class Map:
                                         [self.governments_money[self.move][
                                              self.map[x2][y2].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
                                     self.map[j[0]][j[1]].province = len(
-                                        self.governments_earnings[self.map[j[0]][j[1]].government - 1]) - 1
+                                        self.governments_earnings[self.map[j[0]][j[1]].government - 1])
                                     self.governments_earnings.append([1])
                                     self.dfs_2(j[0], j[1])
                                 else:

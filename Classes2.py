@@ -231,7 +231,7 @@ class Map:
             self.map[k[0]][k[1]].capital = (k[0], k[1])
             self.map[k[0]][k[1]].government_size = 1
             self.map[k[0]][k[1]].entity = castle
-            self.governments_money.append([1000])
+            self.governments_money.append([10])
             self.governments_earnings.append([1])
             for t in sp:
                 self.map[t[0]][t[1]].government = c
@@ -316,11 +316,11 @@ class Map:
                                 if not self.selected:
                                     self.selected = True
                                     self.borders = self.government_borders(x, y)
-                                    self.where_click = (x, y)
                                 else:
                                     self.selected = (x, y)
-                                    self.where_click = (x, y)
                                     self.borders = self.stroke_borders(x, y)
+                                self.where_click = (x, y)
+
                             else:
                                 self.selected = True
                                 self.borders = self.government_borders(x, y)
@@ -390,6 +390,7 @@ class Map:
                         else:
                             self.selected = True
                             self.borders = self.government_borders(x, y)
+                            self.where_click = (x, y)
                     elif self.buy_building is not None:
                         if self.governments_money[self.move][
                             self.map[self.where_click[0]][self.where_click[1]].province] \
@@ -508,7 +509,12 @@ class Map:
         for i in range(self.y):
             for j in range(self.x):
                 if self.map[i][j].government == color:
-                    if 10 < self.map[i][j].type < 15:
+                    if self.map[i][j].entity is None:
+                        if self.governments_money[color - 1][self.map[i][j].province] >= 15 and randint(0, 1):
+                            self.map[i][j].entity = farm
+                            self.governments_money[color - 1][self.map[i][j].province] -= 15
+                            self.governments_earnings[color - 1][self.map[i][j].province] += 4
+                    if 10 < self.map[i][j].entity < 15 and self.map[i][j].can_move:
                         pass
 
     def dfs_2(self, x, y, size=1):
@@ -539,8 +545,7 @@ class Map:
         for i in t:
             diff_x = i[0] - x
             diff_y = i[1] - y
-            for j in self.do_borders(x, y, diff_x, diff_y):
-                sp.append(j)
+            sp.append(self.do_borders(x, y, diff_x, diff_y))
         a, t = self.check_neighbours(ground, x, y)
         for i in t:
             if not self.map[i[0]][i[1]].checked:
@@ -550,8 +555,7 @@ class Map:
                 else:
                     diff_x = i[0] - x
                     diff_y = i[1] - y
-                    for j in self.do_borders(x, y, diff_x, diff_y):
-                        sp.append(j)
+                    sp.append(self.do_borders(x, y, diff_x, diff_y))
         self.update = True
         return sp
 
@@ -565,8 +569,7 @@ class Map:
             for i in t:
                 diff_x = i[0] - x
                 diff_y = i[1] - y
-                for j in self.do_borders(x, y, diff_x, diff_y):
-                    sp.append(j)
+                sp.append(self.do_borders(x, y, diff_x, diff_y))
             if self.map[x][y].capital == self.map[self.where_click[0]][self.where_click[1]].capital:
                 t = self.check_neighbours(ground, x, y)[1]
                 if self.map[x][y].checked < 5:
@@ -585,8 +588,7 @@ class Map:
                         if not self.map[i[0]][i[1]].checked:
                             diff_x = i[0] - x
                             diff_y = i[1] - y
-                            for k in self.do_borders(x, y, diff_x, diff_y):
-                                sp.append(k)
+                            sp.append(self.do_borders(x, y, diff_x, diff_y))
                 while self.bfs_queue:
                     ind = 0
                     for i in range(len(self.bfs_queue)):
@@ -605,8 +607,7 @@ class Map:
                         if f:
                             diff_x = i[0] - x
                             diff_y = i[1] - y
-                            for k in self.do_borders(x, y, diff_x, diff_y):
-                                sp.append(k)
+                            sp.append(self.do_borders(x, y, diff_x, diff_y))
                     for j in self.stroke_borders(a, b):
                         sp.append(j)
             else:
@@ -614,15 +615,13 @@ class Map:
                     if not self.map[i[0]][i[1]].checked:
                         diff_x = i[0] - x
                         diff_y = i[1] - y
-                        for k in self.do_borders(x, y, diff_x, diff_y):
-                            sp.append(k)
+                        sp.append(self.do_borders(x, y, diff_x, diff_y))
         else:
             t = self.check_neighbours(water, x, y)[1]
             for i in t:
                 diff_x = i[0] - x
                 diff_y = i[1] - y
-                for j in self.do_borders(x, y, diff_x, diff_y):
-                    sp.append(j)
+                sp.append(self.do_borders(x, y, diff_x, diff_y))
             if self.map[x][y].capital == self.map[self.where_click[0]][self.where_click[1]].capital:
                 t = self.check_neighbours(ground, x, y)[1]
                 for i in t:
@@ -652,8 +651,7 @@ class Map:
                         if f:
                             diff_x = i[0] - x
                             diff_y = i[1] - y
-                            for k in self.do_borders(x, y, diff_x, diff_y):
-                                sp.append(k)
+                            sp.append(self.do_borders(x, y, diff_x, diff_y))
                     for j in self.stroke_borders(a, b):
                         sp.append(j)
             else:
@@ -661,41 +659,39 @@ class Map:
                     if not self.map[i[0]][i[1]].checked:
                         diff_x = i[0] - x
                         diff_y = i[1] - y
-                        for k in self.do_borders(x, y, diff_x, diff_y):
-                            sp.append(k)
+                        sp.append(self.do_borders(x, y, diff_x, diff_y))
         self.update = True
         return sp
 
     def do_borders(self, x, y, diff_x, diff_y):
-        sp = []
         if diff_x == 1:
             if diff_y - (x & 1) == -1:
                 a, b = self.centres[x][y]
-                sp.append([(a + 22, b), (a + 11, b - 18)])
+                res = [(a + 22, b), (a + 11, b - 18)]
                 # print("Справа сверху")
             else:
                 a, b = self.centres[x][y]
-                sp.append([(a + 22, b), (a + 11, b + 18)])
+                res = [(a + 22, b), (a + 11, b + 18)]
                 # print("Справа снизу")
         elif diff_x == 0:
             if diff_y == 1:
                 a, b = self.centres[x][y]
-                sp.append([(a - 10, b + 18), (a + 10, b + 18)])
+                res = [(a - 10, b + 18), (a + 10, b + 18)]
                 # print("Снизу")
             else:
                 a, b = self.centres[x][y]
-                sp.append([(a - 10, b - 18), (a + 10, b - 18)])
+                res = [(a - 10, b - 18), (a + 10, b - 18)]
                 # print("Сверху")
         else:
             if diff_y - (x & 1) == -1:
                 a, b = self.centres[x][y]
-                sp.append([(a - 22, b), (a - 11, b - 18)])
+                res = [(a - 22, b), (a - 11, b - 18)]
                 # print("Слева сверху")
             else:
                 a, b = self.centres[x][y]
-                sp.append([(a - 21, b), (a - 10, b + 18)])
+                res = [(a - 21, b), (a - 10, b + 18)]
                 # print("Слева снизу")
-        return sp
+        return res
 
     def do_move(self, x1, y1, x2, y2):
         self.can_move_bfs(x1, y1)
@@ -744,7 +740,7 @@ class Map:
                     self.map[self.selected[0]][self.selected[1]].entity - 10:
                 for i in self.check_neighbours(ground, x2, y2)[1]:
                     self.checked_to_zero()
-                    if self.dfs((x2, y2)):
+                    if self.map[x2][y2].government is not None and self.dfs((x2, y2)):
                         """Разбиение на провинции(переделать)"""
                         self.checked_to_zero()
                         self.map[x2][y2].checked = 1

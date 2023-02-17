@@ -63,6 +63,9 @@ class Map:
         # centres[i][j] - расположение центра [i][j] шестиугольника(в пикселях)
         self.update = True
         self.logs = []
+        self.bots = []
+        for i in range(2, governments_num):
+            self.bots.append(i)
         step_x = 0
         for i in range(self.y):
             for j in range(self.x):
@@ -105,7 +108,7 @@ class Map:
         #     for j in range(y):
         #         print(self.map[j][i].entity, end=' ')
         #     print()
-        sp = []
+        # sp = []
         # for i in range(x):
         #     for j in range(y):
         #         if self.map[j][i].type == ground:
@@ -231,7 +234,7 @@ class Map:
             self.map[k[0]][k[1]].capital = (k[0], k[1])
             self.map[k[0]][k[1]].government_size = 1
             self.map[k[0]][k[1]].entity = castle
-            self.governments_money.append([10])
+            self.governments_money.append([1000])
             self.governments_earnings.append([1])
             for t in sp:
                 self.map[t[0]][t[1]].government = c
@@ -295,8 +298,8 @@ class Map:
         # print(self.map[q][r].defend_level, "- defend")
         # print(self.map[q][r].capital, "- capital")
         # print(self.governments_earnings, "- g_e")
-        print(self.map[q][r].province, "- province")
-
+        # print(self.map[q][r].province, "- province")
+        # print(self.governments_money[self.map[q][r].government - 1][self.map[q][r].province], "q-m")
         return (q, r)
 
     # Обработка клика
@@ -306,7 +309,9 @@ class Map:
         self.checked_to_zero()
         if self.map[x][y].type == ground:
             if type(self.selected) == tuple and self.selected != (x, y):
-                self.do_move(self.selected[0], self.selected[1], x, y)
+                self.can_move_bfs(self.selected[0], self.selected[1])
+                if 0 < self.map[x][y].checked < 5:
+                    self.do_move(self.selected[0], self.selected[1], x, y)
             else:
                 if self.map[x][y].government is not None and self.map[x][y].government == self.move + 1:
                     if self.map[x][y].entity is not None and 10 < self.map[x][y].entity < 15:
@@ -346,6 +351,7 @@ class Map:
                                 f = False
                         if f:
                             if self.map[x][y].capital == self.map[self.where_click[0]][self.where_click[1]].capital:
+                                '''Покупка юнита'''
                                 if self.map[x][y].entity == tree:
                                     self.governments_earnings[self.move][
                                         self.map[self.where_click[0]][self.where_click[1]].province] += 1
@@ -363,7 +369,7 @@ class Map:
                                 self.governments_earnings[self.move][
                                     self.map[self.where_click[0]][self.where_click[1]].province] -= \
                                     dict_units_earnings[self.map[x][y].entity]
-                                self.governments_money[self.move][0] -= (self.buy_unit * 10) + 10
+                                self.governments_money[self.move][self.map[self.where_click[0]][self.where_click[1]].province] -= (self.buy_unit * 10) + 10
                                 self.borders = self.government_borders(x, y)
                             else:
                                 t = self.check_neighbours(ground, x, y)[1]
@@ -431,7 +437,7 @@ class Map:
                                                 self.map[j[0]][j[1]].entity = castle
                                                 self.governments_money[self.map[j[0]][j[1]].government - 1].append(
                                                     self.governments_money[self.map[j[0]][j[1]].government - 1][
-                                                         self.map[j[0]][j[1]].province] // 3)  # Пересчитать деньги
+                                                        self.map[j[0]][j[1]].province] // 3)  # Пересчитать деньги
                                                 self.map[j[0]][j[1]].province = len(
                                                     self.governments_earnings[self.map[j[0]][j[1]].government - 1])
                                                 self.governments_earnings[self.map[j[0]][j[1]].government - 1].append(1)
@@ -505,17 +511,80 @@ class Map:
     def update_logs(self, what, where, prov=False):
         pass
 
-    def do_turn_bot(self, color):
+    def bot_do_turn(self, color):
         for i in range(self.y):
             for j in range(self.x):
                 if self.map[i][j].government == color:
                     if self.map[i][j].entity is None:
                         if self.governments_money[color - 1][self.map[i][j].province] >= 15 and randint(0, 1):
+                            '''Бот покупает ферму'''
                             self.map[i][j].entity = farm
                             self.governments_money[color - 1][self.map[i][j].province] -= 15
                             self.governments_earnings[color - 1][self.map[i][j].province] += 4
-                    if 10 < self.map[i][j].entity < 15 and self.map[i][j].can_move:
-                        pass
+                    if self.governments_money[color - 1][self.map[i][j].province] >= 10:
+                        '''Бот покупает юнита(пока что на место дерева)'''
+                        if self.map[i][j].entity is not None and self.map[i][j].entity == tree:
+                            self.governments_earnings[color - 1][self.map[i][j].province] += 1
+                            self.governments_money[color - 1][self.map[i][j].province] += 3
+                            self.map[i][j].can_move = 0
+                            self.map[i][j].entity = villager
+                            self.defend_level_up(i, j)
+                            self.governments_earnings[color - 1][self.map[i][j].province] -= \
+                                dict_units_earnings[villager]
+                            self.governments_money[self.move][self.map[i][j].province] -= 10
+                    if self.map[i][j].entity is not None and 10 < self.map[i][j].entity < 15 and self.map[i][j].can_move:
+                        """Бот двигает юнита"""
+                        res = self.bot_move_priority(i, j, i, j)
+                        self.checked_to_zero()
+                        res.sort(key=lambda x: x[2], reverse=True)
+                        self.where_click = (i, j)
+                        self.can_move_bfs(i, j)
+                        for t in res:
+                            if 0 < self.map[t[0]][t[1]].checked < 5 and t[2] >= 0:
+                                self.selected = (i, j)
+                                self.do_move(i, j, t[0], t[1])
+                                break
+        self.update = True
+
+    def bot_buy_priority(self):
+        pass
+
+    def bot_move_priority(self, x, y, x0, y0):
+        res = []  # Список клеток и их приоритетности
+        if x == x0 and y == y0:
+            res.append((x, y, -1))
+        else:
+            res.append(self.bot_do_priority(x, y, self.map[x0][y0].government))
+        if self.map[x][y].capital == self.map[x0][y0].capital:
+            if self.map[x][y].checked < 5:
+                t = self.check_neighbours(ground, x, y)[1]
+                for i in t:
+                    if not self.map[i[0]][i[1]].checked:
+                        self.map[i[0]][i[1]].checked = self.map[x][y].checked + 1
+                        self.bfs_queue.append((i[0], i[1]))
+            while self.bfs_queue:
+                a, b = self.bfs_queue[0][0], self.bfs_queue[0][1]
+                del self.bfs_queue[0]
+                for k in self.bot_move_priority(a, b, x0, y0):
+                    res.append(k)
+        else:
+            self.map[x][y].checked = 1
+        return res
+
+    def bot_do_priority(self, x, y, government) -> tuple:
+        priority = 0
+        if self.map[x][y].government == government:
+            if self.map[x][y].entity is not None:
+                if self.map[x][y].entity == tree:
+                    priority = 2
+                elif self.map[x][y].entity == grave:
+                    priority = 1
+        else:
+            if self.map[x][y].government is not None:
+                priority = 4
+            else:
+                priority = 3
+        return (x, y, priority)
 
     def dfs_2(self, x, y, size=1):
         self.map[x][y].checked = 1
@@ -694,8 +763,7 @@ class Map:
         return res
 
     def do_move(self, x1, y1, x2, y2):
-        self.can_move_bfs(x1, y1)
-        if self.map[x2][y2].government == self.map[self.selected[0]][self.selected[1]].government:
+        if self.map[x1][y1].government == self.map[x2][y2].government:
             """Если юнит из клетки ходит в своё гос-во"""
             if self.map[x2][y2].entity is not None and 4 < self.map[x2][y2].entity < 11:
                 """С зданием"""
@@ -703,40 +771,34 @@ class Map:
                 self.selected = True
                 self.checked_to_zero()
                 self.borders = self.government_borders(x2, y2)
-            #  ^^^^ Проверил не здание ли в этой клетке
             elif self.map[x2][y2].entity is not None and 10 < self.map[x2][y2].entity < 15:
                 """С другим юнитом"""
                 """Объединение юнитов"""
-                if 0 < self.map[x2][y2].checked < 5:
-                    self.governments_earnings[self.move][self.map[x2][y2].province] += dict_units_earnings[
-                        self.map[x2][y2].entity]
-                    if self.map[x2][y2].entity + self.map[x1][y1].entity - 10 < 15:
-                        self.map[x2][y2].entity += self.map[x1][y1].entity - 10
-                        self.map[x1][y1].entity = None
-                        self.defend_level_up(x2, y2)
-                        self.defend_level_down(x1, y1)
-                    self.governments_earnings[self.move][self.map[x2][y2].province] -= \
-                        dict_units_earnings[self.map[x2][y2].entity]
-                    self.selected = True
-                    self.checked_to_zero()
-                    self.borders = self.government_borders(x2, y2)
-            else:
-                """В своё гос - во с незначительной сущностью (из клетки)"""
-                if 0 < self.map[x2][y2].checked < 5:
-                    self.checked_to_zero()
-                    self.map[x2][y2].entity = self.map[self.selected[0]][self.selected[1]].entity
-                    self.map[self.selected[0]][self.selected[1]].entity = None
+                self.governments_earnings[self.move][self.map[x2][y2].province] += dict_units_earnings[
+                    self.map[x2][y2].entity]
+                if self.map[x2][y2].entity + self.map[x1][y1].entity - 10 < 15:
+                    self.map[x2][y2].entity += self.map[x1][y1].entity - 10
+                    self.map[x1][y1].entity = None
                     self.defend_level_up(x2, y2)
                     self.defend_level_down(x1, y1)
-                    self.borders = self.government_borders(x2, y2)
-                    self.selected = True
-                else:
-                    self.selected = False
+                self.governments_earnings[self.move][self.map[x2][y2].province] -= \
+                    dict_units_earnings[self.map[x2][y2].entity]
+                self.selected = True
+                self.checked_to_zero()
+                self.borders = self.government_borders(x2, y2)
+            else:
+                """В своё гос - во с незначительной сущностью (из клетки)"""
+                self.map[x2][y2].entity = self.map[x1][y1].entity
+                self.map[x1][y1].entity = None
+                self.defend_level_up(x2, y2)
+                self.defend_level_down(x1, y1)
+                self.checked_to_zero()
+                self.borders = self.government_borders(x2, y2)
+                self.selected = True
+
         else:
             """Если ход в чужое гос-во или в клетку без него(из клетки)"""
-            self.checked_to_zero()
-            self.can_move_bfs(x2, y2)
-            if 0 < self.map[x2][y2].checked < 5 and self.map[x2][y2].defend_level <= \
+            if self.map[x2][y2].defend_level <= \
                     self.map[self.selected[0]][self.selected[1]].entity - 10:
                 for i in self.check_neighbours(ground, x2, y2)[1]:
                     self.checked_to_zero()
@@ -753,10 +815,8 @@ class Map:
                                     self.map[j[0]][j[1]].government_size = 1
                                     self.map[j[0]][j[1]].entity = castle
                                     self.governments_money[self.map[j[0]][j[1]].government - 1].append(
-                                        [self.governments_money[self.move][
-                                             self.map[x2][y2].province] // 3])  # Пересчитать деньги БЫСТРО БЛ
-                                    self.map[j[0]][j[1]].province = len(
-                                        self.governments_earnings[self.map[j[0]][j[1]].government - 1])
+                                        [self.governments_money[self.move][self.map[x2][y2].province] // 3])  # Пересчитать деньги БЫСТРО
+                                    self.map[j[0]][j[1]].province = len(self.governments_earnings[self.map[j[0]][j[1]].government - 1])
                                     self.governments_earnings.append([1])
                                     self.dfs_2(j[0], j[1])
                                 else:
@@ -765,7 +825,7 @@ class Map:
                                     self.map[j[0]][j[1]].government_size = 1
                                     self.map[j[0]][j[1]].entity = castle
                                     self.governments_money[self.map[j[0]][j[1]].government - 1][
-                                        self.map[j[0]][j[1]].province] //= 3  # Пересчитать деньги БЫСТРО БЛ
+                                        self.map[j[0]][j[1]].province] //= 3  # Пересчитать деньги БЫСТРО
                                     self.governments_earnings.append([1])
                                     self.dfs_2(j[0], j[1])
 
@@ -792,8 +852,9 @@ class Map:
                 self.selected = False
         self.update = True
 
+
     def can_move_bfs(self, x: int, y: int) -> None:
-        """Просто расставляет checked по правилам dfs"""
+        """Просто расставляет checked по правилам bfs"""
         if self.map[x][y].capital == self.map[self.where_click[0]][self.where_click[1]].capital:
             if self.map[x][y].checked < 5:
                 t = self.check_neighbours(ground, x, y)[1]

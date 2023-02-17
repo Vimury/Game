@@ -145,7 +145,7 @@ class Fight(pygame.sprite.Sprite):
         global start_window, m
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos):
-            governments_num = 2
+            governments_num = 4
             m = Map(x_size, y_size, governments_num)
             m.buy_unit = None
             # None - если нет покупок, 0-3 - если покупаются персонажи
@@ -394,6 +394,8 @@ if __name__ == '__main__':
     timer = 0
     pygame.time.set_timer(pygame.USEREVENT, 1000)
 
+    ind = 0
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -429,8 +431,7 @@ if __name__ == '__main__':
                             pause = False
                     elif not training:
                         if m.selected:
-                            if end_turn_pos[0][0] < x < end_turn_pos[1][0] and end_turn_pos[0][1] < y < end_turn_pos[1][
-                                1]:
+                            if end_turn_pos[0][0] < x < end_turn_pos[1][0] and end_turn_pos[0][1] < y < end_turn_pos[1][1]:
                                 # m.move = (m.move + 1) % m.governments_num
                                 countries = []
                                 for i in range(y_size):
@@ -438,35 +439,59 @@ if __name__ == '__main__':
                                         if m.map[i][j].government is not None:
                                             if m.map[i][j].government not in countries:
                                                 countries.append(m.map[i][j].government)
+                                countries = sorted(countries)
 
                                 if len(countries) == 1:
                                     end_game = True
                                 else:
-                                    m.move = (m.move + 1) % m.governments_num
-                                    while m.move + 1 not in countries:
-                                        m.move = (m.move + 1) % m.governments_num
-
-                                m.borders = []
-                                m.selected = False
-                                m.where_click = ()
-                                for i in range(len(m.governments_money[m.move])):
-                                    print(m.governments_money[m.move][i], "-gm")
-                                    print(m.governments_earnings[m.move][i], "-ge")
-                                    m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
-                                for i in range(y_size):
-                                    for j in range(x_size):
-                                        if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
-                                            if 10 < m.map[i][j].entity < 15:
-                                                if m.governments_money[m.map[i][j].government - 1][
-                                                    m.map[i][j].province] < 0:
-                                                    m.governments_earnings[m.map[i][j].government - 1][
-                                                        m.map[i][j].province] += dict_units_earnings[
-                                                                                     m.map[i][j].entity] - 1
-                                                    m.map[i][j].entity = grave
-                                                    m.defend_level_down(i, j)
-                                                m.map[i][j].can_move = 1
-                                            elif m.map[i][j].entity == grave:
-                                                m.map[i][j].entity = tree
+                                    ind = (ind + 1) % len(countries)
+                                    m.move = countries[ind] - 1
+                                    while m.move in m.bots:
+                                        m.borders = []
+                                        m.selected = False
+                                        m.where_click = ()
+                                        for i in range(len(m.governments_money[m.move])):
+                                            m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
+                                        for i in range(y_size):
+                                            for j in range(x_size):
+                                                if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
+                                                    if 10 < m.map[i][j].entity < 15:
+                                                        if m.governments_money[m.map[i][j].government - 1][
+                                                            m.map[i][j].province] < 0:
+                                                            m.governments_earnings[m.map[i][j].government - 1][
+                                                                m.map[i][j].province] += dict_units_earnings[
+                                                                                             m.map[i][j].entity] - 1
+                                                            m.map[i][j].entity = grave
+                                                            m.defend_level_down(i, j)
+                                                        m.map[i][j].can_move = 1
+                                                    elif m.map[i][j].entity == grave:
+                                                        m.map[i][j].entity = tree
+                                        for i in range(len(m.governments_money)):
+                                            for j in range(len(m.governments_money[i])):
+                                                if m.governments_money[i][j] < 0:
+                                                    m.governments_money[i][j] = 0 + m.governments_earnings[i][j]
+                                        m.bot_do_turn(m.move + 1)
+                                        ind = (ind + 1) % len(countries)
+                                        m.move = countries[ind] - 1
+                                    m.borders = []
+                                    m.selected = False
+                                    m.where_click = ()
+                                    for i in range(len(m.governments_money[m.move])):
+                                        m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
+                                    for i in range(y_size):
+                                        for j in range(x_size):
+                                            if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
+                                                if 10 < m.map[i][j].entity < 15:
+                                                    if m.governments_money[m.map[i][j].government - 1][
+                                                        m.map[i][j].province] < 0:
+                                                        m.governments_earnings[m.map[i][j].government - 1][
+                                                            m.map[i][j].province] += dict_units_earnings[
+                                                                                         m.map[i][j].entity] - 1
+                                                        m.map[i][j].entity = grave
+                                                        m.defend_level_down(i, j)
+                                                    m.map[i][j].can_move = 1
+                                                elif m.map[i][j].entity == grave:
+                                                    m.map[i][j].entity = tree
                                 for i in range(len(m.governments_money)):
                                     for j in range(len(m.governments_money[i])):
                                         if m.governments_money[i][j] < 0:

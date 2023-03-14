@@ -1,7 +1,9 @@
-from Classes2 import Map, Cell, Training
+from Classes_save import Map, Cell, Training
 import pygame
 import os
 import sys
+import taichi as ti
+ti.init()
 
 '''Прописал id типа местности'''
 water = 0
@@ -88,11 +90,12 @@ def render(step_xx, step_y):
         if m.selected:
             screen.blit(load_image('hud_elems\coin.png'), (15, 15))
             font = pygame.font.Font(None, 60)
-            mon = m.governments_money[m.move][m.map[m.where_click[0]][m.where_click[1]].province]  # Пока что выводятся деньги нулевой провинции нулевого гос-ва
+            mon = m.governments_money[m.move][m.map[m.where_click[0]][m.where_click[1]].province]
             text = font.render(str(mon), True, (255, 255, 255))
             screen.blit(text, (110, 45))
 
-            earning = m.governments_earnings[m.move][m.map[m.where_click[0]][m.where_click[1]].province]  # Пока что выводятся доходы нулевой провинции нулевого гос-ва
+            # print(m.where_click[0], m.where_click[1], m.map[m.where_click[0]][m.where_click[1]].province)
+            earning = m.governments_earnings[m.move][m.map[m.where_click[0]][m.where_click[1]].province]
             text = font.render(f'+{earning}' if earning > 0 else str(earning), True, (255, 255, 255))
             screen.blit(text, (width // 2, 45))
 
@@ -151,7 +154,6 @@ class Fight(pygame.sprite.Sprite):
             # None - если нет покупок, 0-3 - если покупаются персонажи
             buy_building = None
             # None - если нет покупок, 0-2 - если покупаются сооружения
-            m.governments_money[0][0] += m.governments_earnings[0][0]
             start_window = False
 
 
@@ -381,7 +383,7 @@ if __name__ == '__main__':
     build_shop = ((width - 750, height - 120), (width - 630, height - 4))
     undo_pos = ((width - 1000, height - 100), (width - 904, height - 4))
 
-    fps = 30
+    fps = 100
     clock = pygame.time.Clock()
 
     running = True
@@ -398,6 +400,7 @@ if __name__ == '__main__':
 
     while running:
         for event in pygame.event.get():
+            print(clock.get_fps())
             if event.type == pygame.QUIT:
                 running = False
             if start_window:
@@ -450,8 +453,6 @@ if __name__ == '__main__':
                                         m.borders = []
                                         m.selected = False
                                         m.where_click = ()
-                                        for i in range(len(m.governments_money[m.move])):
-                                            m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
                                         for i in range(y_size):
                                             for j in range(x_size):
                                                 if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:
@@ -473,11 +474,14 @@ if __name__ == '__main__':
                                         m.bot_do_turn(m.move + 1)
                                         ind = (ind + 1) % len(countries)
                                         m.move = countries[ind] - 1
+                                    if ind == 0:
+                                        m.num_move += 1
                                     m.borders = []
                                     m.selected = False
                                     m.where_click = ()
-                                    for i in range(len(m.governments_money[m.move])):
-                                        m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
+                                    if m.num_move > 1:
+                                        for i in range(len(m.governments_money[m.move])):
+                                            m.governments_money[m.move][i] += m.governments_earnings[m.move][i]
                                     for i in range(y_size):
                                         for j in range(x_size):
                                             if m.map[i][j].government == m.move + 1 and m.map[i][j].entity is not None:

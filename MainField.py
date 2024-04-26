@@ -1,37 +1,8 @@
 from math import sqrt
 from typing import List, Optional, Union, Tuple
 import numpy as np
-
-'''Прописал id типа местности'''
-water = 0
-ground = 1
-
-'''Прописал id государств'''
-sp = [(red := 1), (pink := 2), (green := 3), (light_green := 4), (blue := 5), (light_blue := 6), (orange := 7),
-      (yellow := 8), (purple := 9)]
-
-'''Прописал id сущностей'''
-tree = 1
-stone = 2
-gold = 3
-# Не придумал сущность
-fish = 4
-
-castle = 5
-farm = 6
-tower = 7
-big_tower = 8
-big_farm = 9
-town = 10
-
-villager = 11
-man1 = 12
-knight = 13
-big_knight = 14
-
-grave = 15
-
-dict_units_earnings = {villager: 2, man1: 5, knight: 10, big_knight: 15}
+from variables import *
+from Cell_class import *
 
 from random import randint, choices
 
@@ -87,54 +58,7 @@ class Map:
             self.after_generate()
         self.generate_governments()
 
-        # for i in range(self.y):
-        #     for j in range(self.x):
-        #         self.map[i][j].type = water
-        # self.map[2][2].type = ground
-        # self.map[2][3].type = ground
-        # self.map[2][2].government = red
-        # self.map[2][3].government = red
-        # self.map[2][2].capital = (2, 2)
-        # self.map[2][3].capital = (2, 2)
-        # self.map[2][2].entity = castle
-        # self.map[3][3].type = ground
 
-        # for i in range(x):
-        #     for j in range(y):
-        #         print(self.map[j][i].type, end=' ')
-        #     print()
-        # print()
-
-        # for i in range(x):
-        #     for j in range(y):
-        #         print(self.map[j][i].entity, end=' ')
-        #     print()
-        # sp = []
-        # for i in range(x):
-        #     for j in range(y):
-        #         if self.map[j][i].type == ground:
-        #             if self.map[j][i].parent not in sp:
-        #                 sp.append(self.map[j][i].parent)
-        #             print(self.map[j][i].parent, end=' ')
-        #         else:
-        #             print((0, 0), end=' ')
-        #     print()
-
-        # for i in range(y):
-        #     for j in range(x):
-        #         self.map[i][j].type = water
-        #         self.map[i][j].entity = None
-        # for i in [(13, 6), (12, 6), (11, 7), (11, 8), (11, 6), (11, 9), (11, 10), (12, 11), (13, 10),
-        #           (15, 9), (15, 10), (16, 11), (16, 9), (17, 9), (17, 10),
-        #           (19, 9), (19, 10), (20, 11), (21, 10), (21, 9),
-        #           (23, 9), (23, 10), (24, 9), (25, 10), (25, 9),
-        #           (27, 10), (28, 11), (29, 10), (27, 9), (27, 8), (27, 7), (27, 6), (26, 7), (28, 8),
-        #           (31, 10), (31, 9), (31, 8), (32, 8), (33, 8),
-        #           (35, 6), (35, 8), (35, 9), (35, 10),
-        #           (37, 8), (38, 9), (39, 8), (39, 7), (38, 7), (37, 7), (37, 9), (37, 10), (38, 11), (39, 10),
-        #           (41, 10), (42, 11), (43, 10), (43, 9), (42, 9), (41, 8), (42, 7), (43, 7), (41, 7)]:
-        #     self.map[i[0]][i[1] - 5].type = ground
-        # И чтоб красивее было смонтировать немного(e, s)
 
     # Функция генерации
     def pre_generate(self):
@@ -257,7 +181,6 @@ class Map:
         pos = []
         a = i & 1
         # Сосед справа сверху
-        # Спасибо Кузнецову Тимуру за консультацию
         if i + 1 < self.y and j - 1 + a >= 0 and self.map[i + 1][j - 1 + a].type == type:
             neighbours += 1
             pos.append((i + 1, j - 1 + a))
@@ -297,12 +220,15 @@ class Map:
                     dist = a
                     q, r = i, j
         print(q, r)
-        # print(self.map[q][r].defend_level, "- defend")
-        # print(self.map[q][r].capital, "- capital")
+        #print(self.map[q][r].defend_level, "- defend")
+        print(self.map[q][r].capital, "- capital")
         # print(self.governments_earnings, "- g_e")
         print(self.map[q][r].province, "- province")
         # print(self.governments_money[self.map[q][r].government - 1][self.map[q][r].province], "q-m")
         return (q, r)
+
+    def cell_occupation(self, x, y):
+        pass
 
     # Обработка клика
     def click_processing(self, coords: tuple):  # на вход клетка НЕ в пикселях
@@ -319,18 +245,14 @@ class Map:
                     if self.map[x][y].entity is not None and 10 < self.map[x][y].entity < 15:
                         if self.buy_unit is None:
                             """Выбираю персонажа или провинцию"""
-                            if self.map[x][y].can_move:
-                                if not self.selected:
-                                    self.selected = True
-                                    self.borders = self.government_borders(x, y)
-                                else:
-                                    self.selected = (x, y)
-                                    self.borders = self.stroke_borders(x, y)
-                                self.where_click = (x, y)
-
-                            else:
+                            if not self.selected or not self.map[x][y].can_move:
                                 self.selected = True
                                 self.borders = self.government_borders(x, y)
+                            else:
+                                self.selected = (x, y)
+                                self.borders = self.stroke_borders(x, y)
+                            self.where_click = (x, y)
+
                         else:
                             self.governments_earnings[self.move][self.map[x][y].province] += dict_units_earnings[
                                 self.map[x][y].entity]
@@ -527,9 +449,6 @@ class Map:
                 self.update = True
             self.selected = False
 
-    def update_logs(self, what, where, prov=False):
-        pass
-
     def bot_do_turn(self, color):
         for i in range(self.y):
             for j in range(self.x):
@@ -557,6 +476,8 @@ class Map:
                             res.sort(key=lambda x: x[2], reverse=True)
                             self.checked_to_zero()
                             for t in res:
+                                # if self.governments_money[self.move][self.map[self.selected[0]][self.selected[1]].province] < t[3] * 10 + 10:
+                                #     break
                                 if t[2] > 0 and self.governments_money[color - 1][self.map[i][j].province] > 10 * t[3] and\
                                         self.governments_earnings[color - 1][self.map[i][j].province] > dict_units_earnings[t[3] + 11]:
                                     if self.map[i][j].entity == grave:
@@ -1040,103 +961,7 @@ class Map:
         return False
 
 
-class Training(Map):
-    def __init__(self, x, y, governments_num):
-        self.x: int = x
-        self.y: int = y
-        # Размер поля в шестиугольниках
-        self.selected: Union[bool, tuple] = False
-        # selected - 3 вариации
-        # False - если ничего не выбрано, True - если выбрано государство, Tuple - если выбран персонаж
-        self.governments_num: int = governments_num  # Количество государств
-        self.governments_money: List[List[int]] = []
-        # governments_money[i][j] - количество денег j-той провинции i-того государства
-        self.governments_earnings: List[List[int]] = []
-        # governments_money[i][j] - заработок j-той провинции i-того государства
-        self.centres: List[List[Tuple[int, int]]] = []
-        # centres[i][j] - расположение центра [i][j] шестиугольника(в пикселях)
-        self.borders = []
-        # Хранение кортежей, между точками которых нужно провести границы
-        self.move: int = 0
-        # Чей ход
-        self.where_click: tuple = ()
-        # Куда был сделан последний клик на государство
-        self.bfs_queue = []
-        # Надо для обхода в ширину
-        self.buy_unit: Optional[int] = None
-        self.buy_building: Optional[int] = None
-        self.update = True
-        self.logs = []
-        step_x = 0
-        for i in range(self.y):
-            row = []
-            for j in range(self.x):
-                row.append((step_x + 22, (j * 36 + (18 if i & 1 else 0)) + 24))
-            step_x += 31
-            self.centres.append(row)
-        self.pre_generate()
 
-        for i in range(self.y):
-            for j in range(self.x):
-                self.map[i][j].type = water
-                self.map[i][j].entity = None
-
-        # Создаю красных
-        self.map[2][2].type = ground
-        self.map[2][2].capital = (2, 2)
-        self.map[2][2].entity = castle
-        self.map[2][2].government = red
-        self.map[2][2].government_size = 1
-        self.map[2][2].province = 0
-        self.governments_money.append([100])
-        self.governments_earnings.append([1])
-        x, y = 2, 2
-
-        for i in [(2, 3), (2, 4), (3, 2), (3, 3), (4, 3), (5, 3), (5, 4), (6, 4), (5, 2), (6, 3), (4, 2), (3, 1),
-                  (7, 4), (7, 3), (7, 2), (8, 3), (8, 4)]:
-            self.map[i[0]][i[1]].type = ground
-            self.map[i[0]][i[1]].government = red
-            self.map[i[0]][i[1]].capital = i
-        self.map[6][4].entity = villager
-        self.map[6][4].can_move = 1
-        self.map[2][3].entity = tree
-
-        for j in self.check_neighbours(ground, x, y)[1]:
-            if self.map[j[0]][j[1]].government == self.map[x][y].government and not self.map[j[0]][j[1]].checked:
-                self.map[j[0]][j[1]].government_size = 1
-                # Пересчитать деньги БЫСТРО
-                self.map[j[0]][j[1]].province = len(
-                    self.governments_earnings[self.map[j[0]][j[1]].government - 1]) - 1
-                self.dfs_2(x, y)
-        self.checked_to_zero()
-
-        # Создаю розовых
-        self.map[7][8].type = ground
-        self.map[7][8].capital = (7, 8)
-        self.map[7][8].entity = castle
-        self.map[7][8].government = pink
-        self.map[7][8].government_size = 1
-        self.map[7][8].province = 0
-        self.governments_money.append([100])
-        self.governments_earnings.append([1])
-        for i in [(8, 8), (8, 7), (8, 6), (8, 5), (7, 7), (7, 6), (7, 5), (6, 8), (6, 9), (5, 7), (5, 8),
-                  (9, 4), (9, 5), (9, 6), (9, 7)]:
-            self.map[i[0]][i[1]].type = ground
-            self.map[i[0]][i[1]].government = pink
-            self.map[i[0]][i[1]].capital = i
-
-        self.map[8][6].entity = villager
-        self.defend_level_up(8, 6)
-
-        x, y = 7, 8
-        for j in self.check_neighbours(ground, x, y)[1]:
-            if self.map[j[0]][j[1]].government == self.map[x][y].government and not self.map[j[0]][j[1]].checked:
-                self.map[j[0]][j[1]].government_size = 1
-                # Пересчитать деньги БЫСТРО
-                self.map[j[0]][j[1]].province = len(self.governments_earnings[pink - 1]) - 1
-                self.governments_earnings[pink - 1].append(1)
-                self.dfs_2(x, y)
-        self.checked_to_zero()
 
 
 # class Government:
@@ -1149,15 +974,4 @@ class Training(Map):
 #         self.sizes = []
 
 
-class Cell:
-    def __init__(self, type: int, entity, pos_parent: tuple):
-        self.type = type  # Тип местности на клетке
-        self.government: Optional[int] = None  # К какому цвету пренадлежит
-        self.capital: Optional[Tuple[int, int]] = None  # Столица
-        self.province: Optional[int] = None  # Номер провинции
-        self.entity: Optional[int] = entity  # Сущность на клетке
-        self.parent = pos_parent  # Снова не парься
-        self.checked: int = 0  # Это вообще не парься, там сложные слова как DFS
-        self.government_size: Optional[int] = None  # Размеры государства
-        self.can_move: Optional[int] = None  # Может ли ходить сущность на клетке в этом ходу
-        self.defend_level: int = 0  # Уровень защищённости клетки
+

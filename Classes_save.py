@@ -1135,6 +1135,7 @@ class Training(Map):
                 # Пересчитать деньги БЫСТРО
                 self.map[j[0]][j[1]].province = len(self.governments_earnings[pink - 1]) - 1
                 self.governments_earnings[pink - 1].append(1)
+                self.governments_money[pink - 1].append(0)
                 self.dfs_2(x, y)
         self.checked_to_zero()
 

@@ -1,46 +1,9 @@
-from Classes_save import Map, Cell, Training
+from MainField import Map
+from Train_map_class import Training
 import pygame
 import os
 import sys
-import taichi as ti
-ti.init()
-
-'''Прописал id типа местности'''
-water = 0
-ground = 1
-
-'''Прописал id государств'''
-colors = [(red := 1), (pink := 2), (green := 3), (light_green := 4), (blue := 5), (light_blue := 6), (orange := 7),
-          (yellow := 8), (purple := 9)]
-dict_colors = {1: 'red1', 2: 'pink1', 3: 'green1', 4: 'light_green1', 5: 'blue', 6: 'light_blue', 7: 'orange',
-               8: 'yellow',
-               9: 'purple'}
-
-'''Прописал id сущностей'''
-tree = 1
-stone = 2
-gold = 3
-# Не придумал сущность
-fish = 4
-
-castle = 5
-farm = 6
-tower = 7
-big_tower = 8
-big_farm = 9
-town = 10
-
-villager = 11
-man1 = 12
-knight = 13
-big_knight = 14
-
-grave = 15
-
-dict_entity = {1: 'tree1', 2: 'stone', 3: 'gold', 4: 'fish', 5: 'castle1', 6: 'farm', 7: 'tower', 8: 'big_tower',
-               9: 'big_farm', 10: 'town', 11: 'villager1', 12: 'man1', 13: 'knight', 14: 'big_knight', 15: 'grave'}
-
-dict_units_earnings = {villager: 2, man1: 5, knight: 10, big_knight: 15}
+from variables import *
 
 
 def render(step_xx, step_y):
@@ -221,24 +184,25 @@ class Tip(pygame.sprite.Sprite):
     def update(self, stage=False):
         global tip_text, is_tip, im_flag
         font = pygame.font.Font(None, 60)
-        if self.stage == 0:
-            im_flag = (470, 310)
-        elif self.stage == 1:
-            im_flag = (570, 335)
-        elif self.stage == 2:
-            is_tip = 2
-        elif self.stage == 3:
-            im_flag = (350, height - 120)
-        elif self.stage == 4:
-            im_flag = (500, 330)
-        elif self.stage == 5:
-            is_tip = 2
-        elif self.stage == 6:
-            im_flag = (600, height - 120)
-        elif self.stage == 7:
-            im_flag = (530, 340)
-        elif self.stage == 8:
-            is_tip = 2
+        match self.stage:
+            case 0:
+                im_flag = (470, 310)
+            case 1:
+                im_flag = (570, 335)
+            case 2:
+                is_tip = 2
+            case 3:
+                im_flag = (350, height - 120)
+            case 4:
+                im_flag = (500, 330)
+            case 5:
+                is_tip = 2
+            case 6:
+                im_flag = (600, height - 120)
+            case 7:
+                im_flag = (530, 340)
+            case 8:
+                is_tip = 2
         if stage:
             self.stage += 1
         tip_text = font.render(self.texts[self.stage], True, (0, 0, 0))
@@ -400,7 +364,7 @@ if __name__ == '__main__':
 
     while running:
         for event in pygame.event.get():
-            print(clock.get_fps())
+            # print(clock.get_fps())
             if event.type == pygame.QUIT:
                 running = False
             if start_window:
